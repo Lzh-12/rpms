@@ -3,17 +3,19 @@ import { ref, onMounted, watch } from "vue";
 import router from "@/router";
 import {
   projectMembers,
-  projectTally,
   projectReview,
-  projectTallyPages,
+  projectApproved,
+  projectUnapproved,
 } from "@/api/project/index.js";
 import { Search } from "@element-plus/icons-vue";
-import { projectStatusContant, projectStatusMap } from "@/constants/statusConstants.js"
-import { convertTimestamp, formatTime } from '@/utils/timeConverter.js'
-
+import {
+  projectStatusContant,
+  projectStatusMap,
+} from "@/constants/statusConstants.js";
+import { convertTimestamp, formatTime } from "@/utils/timeConverter.js";
 
 // 项目标题
-const projectTitle = ref(""); 
+const projectTitle = ref("");
 // 选择项目
 const tableData = ref([]);
 // 查询项目
@@ -32,57 +34,54 @@ const searchProjects = () => {
     alert("未找到该项目");
   }
   projectTitle.value = "";
-}
+};
 
-const total = ref(20); // 数据总数
-const pageSize = ref(20); // 每页显示20条数据
-const currentPage = ref(1); // 当前页码
-const pages = ref({
-  page: 0, // 当前页码
-});
+// const total = ref(20); // 数据总数
+// const pageSize = ref(20); // 每页显示20条数据
+// const currentPage = ref(1); // 当前页码
+// const pages = ref({
+//   page: 0, // 当前页码
+// });
 // 当页码改变时触发的函数
-const handleCurrentChange = (newPage) => {
-  currentPage.value = newPage;
-  // 调用API获取数据
-  fetchProjects();
-};
+// const handleCurrentChange = (newPage) => {
+//   currentPage.value = newPage;
+//   // 调用API获取数据
+//   fetchProjects();
+// };
 
-const fetchPages = async () => {
-  projectTallyPages()
-    .then((response) => {
-      if (response.data.code === 0) {
-        total.value = response.data.data;
-      } else {
-        alert("加载失败");
-      }
-    })
-    .catch((error) => {
-      alert("加载错误");
-      console.log("加载错误", error);
-    });
-};
+// const fetchPages = async () => {
+//   projectTallyPages()
+//     .then((response) => {
+//       if (response.data.code === 0) {
+//         total.value = response.data.data;
+//       } else {
+//         alert("加载失败");
+//       }
+//     })
+//     .catch((error) => {
+//       alert("加载错误");
+//       console.log("加载错误", error);
+//     });
+// };
 
 const table = ref([]); // 表格数据
 // 获取项目统计信息
 const fetchProjects = async () => {
-  pages.value.page = Number(currentPage.value) - 1;
+  // pages.value.page = Number(currentPage.value) - 1;
 
-  console.log(currentPage.value, pages.value.page);
-  projectTally(pages.value)
+  // console.log(currentPage.value, pages.value.page);
+  // projectTally(pages.value)
+  projectApproved()
     .then((response) => {
       if (response.data.code === 0) {
         table.value = response.data.data.map((item) => ({
           ...item,
           id: BigInt(item.id).toString(),
           leaderId: BigInt(item.leaderId).toString(),
+          reviewerId: BigInt(item.reviewerId).toString(),
           budget: BigInt(item.budget).toString(),
-          gmtModify:
-            item.gmtModify === 0
-              ? "未修改"
-              : convertTimestamp(item.gmtModify).toString(),
-          gmtCreate: convertTimestamp(item.gmtCreate),
-          gmtReview:
-            item.gmtReview === 0 ? "未审核" : convertTimestamp(item.gmtReview),
+          status: projectStatusMap[item.status],
+          gmtReview: convertTimestamp(item.gmtReview),
           gmtConclude:
             item.gmtConclude === 0
               ? "未结项"
@@ -91,16 +90,7 @@ const fetchProjects = async () => {
           memberNum: BigInt(item.memberNum).toString(),
           achieveNum: BigInt(item.achieveNum).toString(),
           fundNum: BigInt(item.fundNum).toString(),
-          status: projectStatusMap[item.status] || "未知状态",
-          relativeModify:
-            item.gmtModify === 0
-              ? "未修改"
-              : formatTime(item.gmtModify).toString(),
-          relativeCreate: formatTime(item.gmtCreate).toString(),
-          relativeReview:
-            item.gmtReview === 0
-              ? "未审核"
-              : formatTime(item.gmtReview).toString(),
+          relativeReview: formatTime(item.gmtReview).toString(),
           relativeConclude:
             item.gmtConclude === 0
               ? "未结题"
@@ -118,9 +108,41 @@ const fetchProjects = async () => {
 
 // 获取项目数据
 onMounted(() => {
-  fetchPages();
-  fetchProjects();
+  // fetchPages();
+  getUnapprovedProjects();
 });
+
+// ---------------------- 获取未通过的项目列表
+const getUnapprovedProjects = async () => {
+  projectUnapproved()
+    .then((response) => {
+      if (response.data.code === 0) {
+        table.value = response.data.data.map((item) => ({
+          ...item,
+          id: BigInt(item.id).toString(),
+          leaderId: BigInt(item.leaderId).toString(),
+          reviewerId: BigInt(item.reviewerId).toString(),
+          budget: BigInt(item.budget).toString(),
+          status: projectStatusMap[item.status],
+          gmtSubmit: convertTimestamp(item.gmtSubmit),
+          gmtReview: item.gmtReview === 0 ? "未审核" : convertTimestamp(item.gmtReview),
+          taskNum: BigInt(item.taskNum).toString(),
+          memberNum: BigInt(item.memberNum).toString(),
+          achieveNum: BigInt(item.achieveNum).toString(),
+          fundNum: BigInt(item.fundNum).toString(),
+          relativeSubmit: formatTime(item.gmtReview), 
+          relativeReview: item.gmtReview === 0 ? "未审核" : formatTime(item.gmtReview).toString(),
+        }));
+        tableData.value = table.value;
+      } else {
+        alert(response.data.msg || "加载失败");
+      }
+    })
+    .catch((error) => {
+      alert("加载错误");
+      console.log("加载错误", error);
+    });
+};
 
 // 获取项目详情的函数
 function getDetail(number) {
@@ -128,9 +150,11 @@ function getDetail(number) {
   router.push(`/admin/project/my/detail/${number}`);
 }
 
+// 切换项目列表
+const showMode = ref(true);
 const showReviewButton = (status) => {
-  // 项目处于"未处理"才可以进行审核
-  return status === projectStatusContant.STATUS_UNPROCESSED;
+  // 项目处于"已提交"才可以进行审核
+  return status === projectStatusContant.STATUS_SUBMIT && !showMode.value;
 };
 
 /* 对话框进行操作 */
@@ -189,7 +213,7 @@ const reviewProject = async () => {
   projectReview(formReview.value)
     .then((response) => {
       if (response.data.code === 0) {
-        currentPage.value = 1;
+        // currentPage.value = 1;
         fetchProjects();
         alert(response.data.msg || "审核成功");
       } else {
@@ -245,15 +269,29 @@ watch(selectedOption, () => {
       <el-button type="primary" :icon="Search" @click="searchProjects"
         >查询</el-button
       >
-      <el-button @click="fetchProjects">全部</el-button>
+      <el-button @click="fetchProjects">已通过的项目</el-button>
+      <el-button @click="getUnapprovedProjects">未通过的项目</el-button>
     </div>
     <!-- 展示申报的项目 -->
     <div class="container-show">
       <!-- 申报项目展示-->
       <div class="container-show-content">
         <el-table :data="tableData" style="width: 100%; margin-bottom: 50px">
-          <el-table-column fixed prop="title" label="项目标题" width="130" show-overflow-tooltip/>
-          <el-table-column prop="leaderName" label="项目负责人" width="100" show-overflow-tooltip>
+          <el-table-column
+            fixed
+            prop="title"
+            label="标题"
+            min-width="120"
+            max-width="220"
+            show-overflow-tooltip
+          />
+          <el-table-column
+            prop="leaderName"
+            label="负责人"
+            min-width="100"
+            max-width="200"
+            show-overflow-tooltip
+          >
             <template #default="scope">
               <el-popover
                 effect="light"
@@ -266,12 +304,19 @@ watch(selectedOption, () => {
                   <div>邮箱: {{ scope.row.leaderEmail }}</div>
                 </template>
                 <template #reference>
-                  <el-tag effect="plain" type='success'>{{ scope.row.leaderName }}</el-tag>
+                  <el-tag effect="plain" type="success">{{
+                    scope.row.leaderName
+                  }}</el-tag>
                 </template>
               </el-popover>
             </template>
           </el-table-column>
-          <el-table-column prop="status" label="项目状态" width="100">
+          <el-table-column
+            prop="status"
+            label="项目状态"
+            min-width="100"
+            max-width="160"
+          >
             <template #default="scope">
               <el-popover
                 effect="light"
@@ -289,8 +334,20 @@ watch(selectedOption, () => {
               </el-popover>
             </template>
           </el-table-column>
-          <el-table-column prop="budget" label="项目预算" width="100" show-overflow-tooltip/>
-          <el-table-column label="项目创建时间" width="160" show-overflow-tooltip>
+          <el-table-column
+            prop="budget"
+            label="项目预算"
+            min-width="100"
+            max-width="180"
+            show-overflow-tooltip
+          />
+          <el-table-column
+            v-if="!showMode"
+            label="提交时间"
+            min-width="110"
+            max-width="200"
+            show-overflow-tooltip
+          >
             <template #default="scope">
               <el-popover
                 effect="light"
@@ -299,32 +356,20 @@ watch(selectedOption, () => {
                 width="auto"
               >
                 <template #default>
-                  <div>创建时间: {{ scope.row.gmtCreate }}</div>
+                  <div>提交时间: {{ scope.row.gmtSubmit }}</div>
                 </template>
                 <template #reference>
-                  {{ scope.row.relativeCreate }}
+                  {{ scope.row.relativeSubmit }}
                 </template>
               </el-popover>
             </template>
           </el-table-column>
-          <el-table-column label="项目修改时间" width="160" show-overflow-tooltip>
-            <template #default="scope">
-              <el-popover
-                effect="light"
-                trigger="hover"
-                placement="top"
-                width="auto"
-              >
-                <template #default>
-                  <div>修改时间: {{ scope.row.gmtModify }}</div>
-                </template>
-                <template #reference>
-                  {{ scope.row.relativeModify }}
-                </template>
-              </el-popover>
-            </template>
-          </el-table-column>
-          <el-table-column label="项目审核时间" width="160" show-overflow-tooltip>
+          <el-table-column
+            label="审核时间"
+            min-width="110"
+            max-width="200"
+            show-overflow-tooltip
+          >
             <template #default="scope">
               <el-popover
                 effect="light"
@@ -342,18 +387,21 @@ watch(selectedOption, () => {
             </template>
           </el-table-column>
           <el-table-column
-            prop="gmtConclude"
-            label="项目结项时间"
-            width="160"
-          >
-          <template #default="scope">
+            prop="reviewContent"
+            label="审核内容"
+            min-width="100"
+            max-width="220"
+            show-overflow-tooltip
+          />
+          <el-table-column prop="gmtConclude" label="结项时间" width="160">
+            <template #default="scope">
               <el-popover
                 effect="light"
                 trigger="hover"
                 placement="top"
                 width="auto"
                 min-width="110"
-                max-width="160"
+                max-width="200"
               >
                 <template #default>
                   <div>结项时间: {{ scope.row.gmtConclude }}</div>
@@ -364,11 +412,44 @@ watch(selectedOption, () => {
               </el-popover>
             </template>
           </el-table-column>
-          <el-table-column prop="taskNum" label="项目任务数" width="100" show-overflow-tooltip/>
-          <el-table-column prop="memberNum" label="项目成员数" width="100" show-overflow-tooltip/>
-          <el-table-column prop="achieveNum" label="项目成果数" width="100" show-overflow-tooltip/>
-          <el-table-column prop="fundNum" label="项目总花费" width="100" show-overflow-tooltip/>
-          <el-table-column fixed="right" label="操作" min-width="150">
+          <el-table-column
+            v-if="showMode"
+            prop="taskNum"
+            label="任务数"
+            min-width="100"
+            max-widt="200"
+            show-overflow-tooltip
+          />
+          <el-table-column
+            v-if="showMode"
+            prop="memberNum"
+            label="成员数"
+            min-width="100"
+            max-widt="200"
+            show-overflow-tooltip
+          />
+          <el-table-column
+            v-if="showMode"
+            prop="achieveNum"
+            label="成果数"
+            min-width="100"
+            max-widt="200"
+            show-overflow-tooltip
+          />
+          <el-table-column
+            v-if="showMode"
+            prop="fundNum"
+            label="总花费"
+            min-width="100"
+            max-widt="200"
+            show-overflow-tooltip
+          />
+          <el-table-column
+            fixed="right"
+            label="操作"
+            min-width="150"
+            max-width="200"
+          >
             <template #default="scope">
               <el-button
                 link
@@ -395,14 +476,14 @@ watch(selectedOption, () => {
             </template>
           </el-table-column>
         </el-table>
-        <el-pagination
+        <!-- <el-pagination
           background
           layout="prev, pager, next"
           :current-page="currentPage"
           :total="total"
           :page-size="pageSize"
           @current-change="handleCurrentChange"
-        />
+        /> -->
       </div>
     </div>
 
@@ -415,21 +496,45 @@ watch(selectedOption, () => {
     >
       <div>
         <el-table :data="memberData" stripe style="width: 100%">
-          <el-table-column fixed prop="id" label="用户id" min-width="100" max-width="200" show-overflow-tooltip/>
-          <el-table-column prop="email" label="用户邮箱" min-width="120" max-width="200" show-overflow-tooltip/>
-          <el-table-column prop="name" label="用户名" min-width="100" max-width="200" show-overflow-tooltip/>
-          <el-table-column prop="phone" label="用户手机号" min-width="100" max-width="200" show-overflow-tooltip/>
-          <!-- <el-table-column fixed="right" label="操作" width="100">
-            <template #default="scope">
-              <el-button
-                link
-                type="primary"
-                size="small"
-                @click="deleteMember(scope.row.email)"
-                >删除</el-button
-              >
-            </template>
-          </el-table-column> -->
+          <el-table-column
+            prop="email"
+            label="用户邮箱"
+            min-width="120"
+            max-width="200"
+            show-overflow-tooltip
+          />
+          <el-table-column
+            prop="name"
+            label="用户名"
+            min-width="100"
+            max-width="200"
+            show-overflow-tooltip
+          />
+          <el-table-column
+            prop="phone"
+            label="用户手机号"
+            min-width="100"
+            max-width="200"
+            show-overflow-tooltip
+          />
+          <el-table-column
+            prop="qq"
+            label="QQ"
+            min-width="120"
+            max-width="180"
+          />
+          <el-table-column
+            prop="qq"
+            label="微信号"
+            min-width="120"
+            max-width="180"
+          />
+          <el-table-column
+            prop="institution"
+            label="所属机构"
+            min-width="100"
+            max-width="180"
+          />
         </el-table>
       </div>
     </el-dialog>
@@ -465,7 +570,7 @@ watch(selectedOption, () => {
       <template #footer>
         <div class="dialog-footer">
           <el-button @click="centerDialogVisibleReview = false">取消</el-button>
-          <el-button type="primary" @click="reviewProject"> 确定 </el-button>
+          <el-button type="primary" @click="reviewProject">确定</el-button>
         </div>
       </template>
     </el-dialog>
@@ -520,7 +625,6 @@ watch(selectedOption, () => {
 @media screen and (max-width: 768px) {
   .el-table {
     width: 100%; /* 让表格宽度自适应 */
-    font-size: 12px; /* 缩小字体大小 */
   }
 }
 </style>

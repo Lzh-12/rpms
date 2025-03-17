@@ -60,6 +60,11 @@ export const projectApproved = () => {
     return sendRequest("get", '/project/approved');
 }
 
+// 获取未通过的项目列表
+export const projectUnapproved = () => {
+    return sendRequest("get", '/project/unapproved');
+}
+
 // 修改项目
 export const projectModify = (ProjectData) => {
     const params = new URLSearchParams()
@@ -97,18 +102,18 @@ export const projectSubmit = (ProjectData) => {
 }
 
 // 获取项目统计信息
-export const projectTally = (ProjectData) => {
-    const params = new URLSearchParams()
-    for(let key in ProjectData){
-        params.append(key, ProjectData[key])
-    }
-    return sendRequest("get", `/project/tally/page/${params.get('page')}`, params);
-}
+// export const projectTally = (ProjectData) => {
+//     const params = new URLSearchParams()
+//     for(let key in ProjectData){
+//         params.append(key, ProjectData[key])
+//     }
+//     return sendRequest("get", `/project/tally/page/${params.get('page')}`, params);
+// }
 
-// 获取项目统计页数
-export const projectTallyPages = () => {
-    return sendRequest("get", '/project/tally/pages');
-}
+// // 获取项目统计页数
+// export const projectTallyPages = () => {
+//     return sendRequest("get", '/project/tally/pages');
+// }
 
 // 获取所有领域信息
 export const projectAreas = () => {

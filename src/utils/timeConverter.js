@@ -17,7 +17,7 @@ export const formatTime = (gmtDate) => {
             // 计算时间差（单位：小时）
             const diffInHours = Math.floor((now - t) / (60 * 60 * 1000));
             // 一天之内
-            if (diffInHours < 0) {
+            if (diffInHours <= 0) {
                 // 一小时内
                 // 计算时间差（单位：分钟）
                 const diffInMinutes = Math.floor((now - t) / (60 * 1000));
@@ -45,7 +45,7 @@ export const formatTime = (gmtDate) => {
         // 计算时间差（单位：小时）
         const diffInHours = Math.floor((now - t) / (60 * 60 * 1000));
         // 一天之内
-        if (diffInHours < 0) {
+        if (diffInHours <= 0) {
             // 一小时内
             // 计算时间差（单位：分钟）
             const diffInMinutes = Math.floor((now - t) / (60 * 1000));

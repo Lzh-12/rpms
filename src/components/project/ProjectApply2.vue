@@ -55,7 +55,7 @@ const fetchProjects = async () => {
         table.value = response.data.data.map((item) => ({
           ...item,
           id: BigInt(item.id),
-          status: projectStatusMap[item.status] || "未知状态",
+          status: projectStatusMap[item.status],
           gmtModify:
             item.gmtModify === 0
               ? "未修改"
@@ -804,7 +804,6 @@ const showDelete = (id) => {
               width="100%"
               placeholder="项目简述"
               clearable
-              type="number"
             />
           </div>
         </div>
@@ -818,6 +817,7 @@ const showDelete = (id) => {
               width="100%"
               placeholder="项目预算"
               clearable
+              type="number"
             />
           </div>
           <div class="container-card-content" id="content">
