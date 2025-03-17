@@ -6,7 +6,34 @@ export const submitTask = (taskData) => {
     for(let key in taskData){
         params.append(key, taskData[key])
     }
-    return sendRequest("put", `/task/${params.get('id')}`, params);
+    return sendRequest("put", `/task/${params.get('id')}/submit`, params);
+}
+
+// 修改任务
+export const modifyTask = (taskData) => {
+    const params = new URLSearchParams()
+    for(let key in taskData){
+        params.append(key, taskData[key])
+    }
+    return sendRequest("put", `/task/${params.get('id')}/modify`, params);
+}
+
+// 确认任务
+export const ensureTask = (taskData) => {
+    const params = new URLSearchParams()
+    for(let key in taskData){
+        params.append(key, taskData[key])
+    }
+    return sendRequest("put", `/task/${params.get('id')}/ensure`, params);
+}
+
+// 完成任务
+export const finishTask = (taskData) => {
+    const params = new URLSearchParams()
+    for(let key in taskData){
+        params.append(key, taskData[key])
+    }
+    return sendRequest("put", `/task/${params.get('id')}/finish`, params);
 }
 
 // 删除任务
@@ -32,7 +59,7 @@ export const publishTask = (taskData) => {
     return sendRequest("post", `/task/project/${params.get('id')}`, params);
 }
 
-// 获取对应项目的任务列表
+// 获取当前用户发布的所有任务列表
 export const getAllTask = (taskId) => {
     const params = new URLSearchParams()
     for(let key in taskId){

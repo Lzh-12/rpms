@@ -1,9 +1,16 @@
 <script setup>
 import { ref, onMounted } from "vue";
-import { achieveMyList, achieveDelete } from "@/api/achieve/index.js";
+import {
+  achieveMyList,
+  achieveDelete,
+  achieveModify,
+  achieveSubmit,
+} from "@/api/achieve/index.js";
 import {
   achieveStatusContant,
   achieveStatusMap,
+  projectStatusContant,
+  projectStatusMap,
 } from "@/constants/statusConstants.js";
 import { convertTimestamp, formatTime } from "@/utils/timeConverter.js";
 
@@ -18,9 +25,8 @@ const fetchTableData = async () => {
           ...item,
           id: BigInt(item.id).toString(),
           projectId: BigInt(item.projectId).toString(),
-          submitterId: BigInt(item.submitterId).toString(),
+          projecStatus: projectStatusMap[item.projecStatus],
           status: achieveStatusMap[item.status] || "未知状态",
-          type: map[item.type] || "其他",
           gmtCreate: convertTimestamp(item.gmtSubmit).toString(),
           gmtModify:
             item.gmtModify === 0
@@ -64,32 +70,19 @@ onMounted(() => {
 
 const centerDialogVisible = ref(false);
 const id = ref(null);
-const status = ref("");
 
 // 对话框
-const deleteDialog = async (ProjectId, ProjectStatus) => {
+const deleteDialog = async (id) => {
   centerDialogVisible.value = true;
-  id.value = BigInt(ProjectId);
-  status.value = ProjectStatus;
+  id.value = BigInt(id);
 };
 // 删除
 const showDeleteButton = (status) => {
-  // 状态为"未处理"或“审批驳回”的成果可以删除
-  return (
-    status === achieveStatusContant.STATUS_UNPROCESSED ||
-    status === achieveStatusContant.STATUS_REJECTED
-  );
+  // 仅状态为"草稿”的成果可以删除
+  return status === achieveStatusContant.STATUS_DRAFT;
 };
 // 删除经费申请接口
 const deleteAchieveApply = async () => {
-  if (
-    status.value !== achieveStatusContant.STATUS_UNPROCESSED ||
-    status.value !== achieveStatusContant.STATUS_REJECTED
-  ) {
-    alert("不可以删除当前的经费申请");
-    centerDialogVisible.value = false;
-    return;
-  }
   achieveDelete(id.value)
     .then((response) => {
       if (response.data.code === 0) {
@@ -107,6 +100,76 @@ const deleteAchieveApply = async () => {
       centerDialogVisible.value = false;
     });
 };
+
+// ------------------------- 提交成果
+const showSubmitButton = (status, projecStatus) => {
+  // 仅 “草稿” 状态的成果可以被提交
+  return (
+    status === achieveStatusContant.STATUS_DRAFT &&
+    projecStatus === projectStatusContant.STATUS_LAUNCHED
+  );
+};
+const centerDialogVisibleSubmit = ref(false);
+const formSubmit = ref({
+  id: null,
+});
+const submitDialog = async (id) => {
+  centerDialogVisibleSubmit.value = true;
+  formSubmit.value.id = BigInt(id); // 成果id
+};
+const submitAchieveApply = async () => {
+  achieveSubmit(formSubmit.value)
+    .then((response) => {
+      if (response.data.code === 0) {
+        fetchTableData();
+        alert(response.data.msg || "提交成功");
+      } else {
+        alert(response.data.msg || "提交失败");
+      }
+    })
+    .catch((error) => {
+      alert("提交错误");
+      console.log("提交错误", error);
+    })
+    .finally(() => {
+      centerDialogVisibleSubmit.value = false;
+    });
+};
+
+// ------------------- 修改成果
+const showModifyButton = (status) => {
+  // 经费处于"草稿"才可以被提交
+  return status === achieveStatusContant.STATUS_DRAFT;
+};
+const centerDialogVisibleModify = ref(false);
+const formModify = ref({
+  id: null,
+  title: "",
+  content: "",
+  type: null,
+});
+const modifyDialog = async (id) => {
+  centerDialogVisibleModify.value = true;
+  formModify.value.id = BigInt(id); // 成果id
+};
+const modifyAchieve = async () => {
+  achieveModify(formModify.value)
+    .then((response) => {
+      if (response.data.code === 0) {
+        fetchTableData();
+        alert(response.data.msg || "修改成功");
+      } else {
+        alert(response.data.msg || "修改失败");
+      }
+    })
+    .catch((error) => {
+      alert("修改错误");
+      console.log("修改错误", error);
+    })
+    .finally(() => {
+      centerDialogVisibleModify.value = false;
+    });
+};
 </script>
 
 <template>
@@ -114,8 +177,8 @@ const deleteAchieveApply = async () => {
     <el-table :data="tableData" style="width: 100%">
       <el-table-column
         fixed
-        label="成果提交人"
-        min-width="100"
+        label="项目状态"
+        min-width="120"
         max-width="200"
         show-overflow-tooltip
       >
@@ -127,12 +190,11 @@ const deleteAchieveApply = async () => {
             width="auto"
           >
             <template #default>
-              <div>用户名: {{ scope.row.submitterName }}</div>
-              <div>邮箱: {{ scope.row.submitterEmail }}</div>
+              <div>状态: {{ scope.row.projecStatus }}</div>
             </template>
             <template #reference>
               <el-tag effect="plain" type="success">{{
-                scope.row.submitterName
+                scope.row.projecStatus
               }}</el-tag>
             </template>
           </el-popover>
@@ -258,10 +320,29 @@ const deleteAchieveApply = async () => {
       <el-table-column
         fixed="right"
         label="操作"
-        min-width="80"
+        min-width="100"
         max-width="180"
       >
         <template #default="scope">
+          <el-button
+            link
+            type="primary"
+            size="small"
+            v-if="showSubmitButton(scope.row.status, scope.row.projecStatus)"
+            @click="submitDialog(scope.row.id)"
+          >
+            提交
+          </el-button>
+          <el-button
+            link
+            type="primary"
+            size="small"
+            v-if="showModifyButton(scope.row.status)"
+            @click="modifyDialog(scope.row.id)"
+          >
+            修改
+          </el-button>
+
           <el-button
             link
             type="danger"
@@ -276,7 +357,63 @@ const deleteAchieveApply = async () => {
     </el-table>
   </div>
 
-  <!-- 提示框 -->
+  <!-- 提交成果 -->
+  <el-dialog v-model="centerDialogVisible" title="提交成果" width="500" center>
+    <span> 确认提交？提交后不可修改 </span>
+    <template #footer>
+      <div class="dialog-footer">
+        <el-button @click="centerDialogVisibleSubmit = false">取消</el-button>
+        <el-button type="primary" @click="submitAchieveApply()">
+          确认
+        </el-button>
+      </div>
+    </template>
+  </el-dialog>
+
+  <!-- 修改成果 -->
+  <el-dialog
+    v-model="centerDialogVisibleModify"
+    title="修改经成果"
+    width="600"
+    center
+  >
+    <div style="display: flex; flex-direction: column; align-items: center">
+      <el-form :model="formModify" label-width="auto" style="width: 70%">
+        <el-form-item label="成果标题">
+          <el-input
+            v-model="formModify.title"
+            type="number"
+            placeholder="请输入成果标题"
+          />
+        </el-form-item>
+        <el-form-item label="成果类型">
+          <el-select v-model="formModify.type" placeholder="请选择类型">
+            <el-option
+              v-for="item in optionTypes"
+              :key="item.id"
+              :label="item.name"
+              :value="item.id"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="成果内容">
+          <el-input
+            v-model="formModify.content"
+            type="textarea"
+            placeholder="请输入成果内容"
+          />
+        </el-form-item>
+      </el-form>
+    </div>
+    <template #footer>
+      <div class="dialog-footer">
+        <el-button @click="centerDialogVisibleModify = false">取消</el-button>
+        <el-button type="primary" @click="modifyAchieve()"> 确认 </el-button>
+      </div>
+    </template>
+  </el-dialog>
+
+  <!-- 删除成果 -->
   <el-dialog v-model="centerDialogVisible" title="提示" width="500" center>
     <span> 确认删除？删除后不可修改 </span>
     <template #footer>

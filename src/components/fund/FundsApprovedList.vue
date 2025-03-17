@@ -56,8 +56,7 @@ const searchApproved = async () => {
           projectId: BigInt(item.projectId).toString(),
           expenserId: BigInt(item.expenserId).toString(),
           figure: BigInt(item.figure).toString(),
-          status: fundStatusMap[item.status] || "未知状态",
-          type: map[item.type] || "其他费用",
+          status: fundStatusMap[item.status],
           gmtCreate: convertTimestamp(item.gmtCreate),
           gmtModify:
             item.gmtModify === 0 ? "未修改" : convertTimestamp(item.gmtModify),

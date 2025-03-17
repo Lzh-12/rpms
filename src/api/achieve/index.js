@@ -32,6 +32,24 @@ export const achieveCreate = (achieveData) => {
     return sendRequest("post", `/achieve/project/${params.get('id')}`, params);
 }
 
+// 修改成果
+export const achieveModify = (achieveData) => {
+    const params = new URLSearchParams()
+    for(let key in achieveData){
+        params.append(key, achieveData[key])
+    }
+    return sendRequest("post", `/achieve/${params.get('id')}/modify`, params);
+}
+
+// 提交成果
+export const achieveSubmit = (achieveData) => {
+    const params = new URLSearchParams()
+    for(let key in achieveData){
+        params.append(key, achieveData[key])
+    }
+    return sendRequest("post", `/achieve/${params.get('id')}/submit`, params);
+}
+
 // 获取项目的全部状态的成果列表
 export const achieveAll = (achieveId) => {
     const params = new URLSearchParams()

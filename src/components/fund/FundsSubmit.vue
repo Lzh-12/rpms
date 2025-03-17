@@ -1,67 +1,30 @@
 <script setup>
 import { ref, onMounted } from "vue";
-import { deleteFund, reviewFund, projectAllFund } from "@/api/fund/index.js";
+import { reviewFund, projectAllFund } from "@/api/fund/index.js";
 import { projectMy } from "@/api/project";
 import {
-  fundStatusContant,
   fundStatusMap,
+  projectStatusMap,
 } from "@/constants/statusConstants.js";
 import { convertTimestamp, formatTime } from "@/utils/timeConverter.js";
 
 // 表格数据
 const tableData = ref([]);
 
-const centerDialogVisible = ref(false);
-const id = ref(null);
-const status = ref("");
-// 对话框
-const deleteDialog = async (ProjectId, ProjectStatus) => {
-  centerDialogVisible.value = true;
-  id.value = BigInt(ProjectId);
-  status.value = ProjectStatus;
-};
-// 删除经费申请接口
-const deleteFundApply = async () => {
-  if (
-    status.value !== fundStatusContant.STATUS_UNPROCESSED ||
-    status.value !== fundStatusContant.STATUS_REJECT
-  ) {
-    alert("不可以删除当前的经费申请");
-    centerDialogVisible.value = false;
-    return;
-  }
-  deleteFund(id)
-    .then((response) => {
-      if (response.data.code === 0) {
-        alert(response.data.msg || "删除成功");
-      } else {
-        alert(response.data.msg || "删除失败");
-      }
-    })
-    .catch((error) => {
-      alert("删除错误");
-      console.log("删除错误", error);
-    })
-    .finally(() => {
-      centerDialogVisible.value = false;
-    });
-};
-
 // 审核对话框
 const centerDialogVisible2 = ref(false);
 const formReview = ref({
   id: null,
   approved: null,
+  content: "",
 });
-const reviewDialog = async (ProjectId, ProjectStatus) => {
+const reviewDialog = async (id) => {
   centerDialogVisible2.value = true;
-  formReview.value.id = BigInt(ProjectId);
-  status.value = ProjectStatus;
+  formReview.value.id = BigInt(id);
 };
 const reviewFundApply = async () => {
-  if (status.value !== fundStatusContant.STATUS_UNPROCESSED) {
-    alert("无法审核当前的经费申请");
-    centerDialogVisible2.value = false;
+  if (!formReview.value.content) {
+    alert("请输入审核内容");
     return;
   }
   reviewFund(formReview.value)
@@ -85,7 +48,7 @@ const reviewFundApply = async () => {
 const form = ref({
   id: null,
 });
-// 项目全部的经费列表的接口
+// 项目已提交的经费列表的接口
 const searchAll = async () => {
   projectAllFund(form.value)
     .then((response) => {
@@ -94,20 +57,14 @@ const searchAll = async () => {
           ...item,
           id: BigInt(item.id).toString(),
           projectId: BigInt(item.projectId).toString(),
+          projecStatus: projectStatusMap[item.projecStatus],
           expenserId: BigInt(item.expenserId).toString(),
           figure: BigInt(item.figure).toString(),
-          status: fundStatusMap[item.status] || "未知状态",
-          type: map[item.type] || "其他费用",
-          gmtCreate: convertTimestamp(item.gmtCreate),
-          gmtModify:
-            item.gmtModify === 0 ? "未修改" : convertTimestamp(item.gmtModify),
+          status: fundStatusMap[item.status],
+          gmtSubmit: convertTimestamp(item.gmtSubmit),
           gmtReview:
             item.gmtReview === 0 ? "未审核" : convertTimestamp(item.gmtReview),
-          relativeCreate: formatTime(item.gmtCreate).toString(),
-          relativeModify:
-            item.gmtModify === 0
-              ? "未修改"
-              : formatTime(item.gmtModify).toString(),
+          relativeSubmit: formatTime(item.gmtSubmit).toString(),
           relativeReview:
             item.gmtReview === 0
               ? "未审核"
@@ -195,13 +152,38 @@ onMounted(() => {
                 <div>邮箱: {{ scope.row.expenserEmail }}</div>
               </template>
               <template #reference>
+                <!-- <el-tag effect="plain" type="success"> -->
+                {{ scope.row.expenserName }}
+                <!-- </el-tag> -->
+              </template>
+            </el-popover>
+          </template>
+        </el-table-column>
+        <el-table-column
+          label="项目状态"
+          min-width="120"
+          max-width="200"
+          show-overflow-tooltip
+        >
+          <template #default="scope">
+            <el-popover
+              effect="light"
+              trigger="hover"
+              placement="top"
+              width="auto"
+            >
+              <template #default>
+                <div>状态: {{ scope.row.projecStatus }}</div>
+              </template>
+              <template #reference>
                 <el-tag effect="plain" type="success">{{
-                  scope.row.expenserName
+                  scope.row.projecStatus
                 }}</el-tag>
               </template>
             </el-popover>
           </template>
         </el-table-column>
+
         <el-table-column
           prop="content"
           label="经费内容"
@@ -243,28 +225,11 @@ onMounted(() => {
           prop="type"
           label="经费类型"
           min-width="120"
-          max-widt="220"
+          max-width="220"
           show-overflow-tooltip
-        >
-          <template #default="scope">
-            <el-popover
-              effect="light"
-              trigger="hover"
-              placement="top"
-              width="auto"
-            >
-              <template #default>
-                <div>内容: {{ scope.row.content }}</div>
-                <div>状态: {{ scope.row.status }}</div>
-              </template>
-              <template #reference>
-                <el-tag>{{ scope.row.status }}</el-tag>
-              </template>
-            </el-popover>
-          </template>
-        </el-table-column>
+        />
         <el-table-column
-          label="创建时间"
+          label="提交时间"
           min-width="150"
           max-width="230"
           show-overflow-tooltip
@@ -277,10 +242,10 @@ onMounted(() => {
               width="auto"
             >
               <template #default>
-                <div>创建时间: {{ scope.row.gmtCreate }}</div>
+                <div>提交时间: {{ scope.row.gmtSubmit }}</div>
               </template>
               <template #reference>
-                {{ scope.row.relativeCreate }}
+                {{ scope.row.relativeSubmit }}
               </template>
             </el-popover>
           </template>
@@ -316,14 +281,6 @@ onMounted(() => {
           <template #default="scope">
             <el-button
               link
-              type="danger"
-              size="small"
-              @click="deleteDialog(scope.row.id, scope.row.status)"
-            >
-              删除
-            </el-button>
-            <el-button
-              link
               type="primary"
               size="small"
               @click="reviewDialog(scope.row.id, scope.row.status)"
@@ -336,32 +293,34 @@ onMounted(() => {
     </div>
   </div>
 
-  <!-- 提示框 -->
-  <el-dialog v-model="centerDialogVisible" title="提示" width="500" center>
-    <span> 确认删除？删除后不可修改 </span>
-    <template #footer>
-      <div class="dialog-footer">
-        <el-button @click="centerDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="deleteFundApply()"> 确认 </el-button>
+  <el-dialog v-model="centerDialogVisible2" title="审核经费" width="700" center>
+    <div style="display: flex; flex-direction: column; align-items: center">
+      <div style="display: flex; flex-direction: row; margin-bottom: 20px">
+        <label for="" style="margin-right: 20px">审核内容</label>
+        <el-input
+          v-model="formReview.content"
+          type="textarea"
+          placeholder="请输入审核内容"
+          style="width: 450px"
+        />
       </div>
-    </template>
-  </el-dialog>
-
-  <el-dialog v-model="centerDialogVisible2" title="提示" width="500" center>
-    <input
-      type="radio"
-      name="approved"
-      v-model="formReview.approved"
-      :value="true"
-      checked
-    />同意报销
-    <input
-      type="radio"
-      name="approved"
-      v-model="formReview.approved"
-      :value="false"
-      checked
-    />拒绝报销
+      <div>
+        <input
+          type="radio"
+          name="approved"
+          v-model="formReview.approved"
+          :value="true"
+          checked
+        />同意
+        <input
+          type="radio"
+          name="approved"
+          v-model="formReview.approved"
+          :value="false"
+          checked
+        />拒绝
+      </div>
+    </div>
     <template #footer>
       <div class="dialog-footer">
         <el-button @click="centerDialogVisible2 = false">取消</el-button>

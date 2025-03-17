@@ -1,9 +1,17 @@
 <script setup>
 import { ref, onMounted } from "vue";
-import { myFund, deleteFund, reviewFund } from "@/api/fund/index.js";
+import {
+  myFund,
+  deleteFund,
+  reviewFund,
+  modifyFund,
+  submitFund
+} from "@/api/fund/index.js";
 import {
   fundStatusContant,
   fundStatusMap,
+  projectStatusContant,
+  projectStatusMap
 } from "@/constants/statusConstants.js";
 import { convertTimestamp, formatTime } from "@/utils/timeConverter.js";
 
@@ -18,13 +26,14 @@ const fetchTableData = async () => {
           ...item,
           id: BigInt(item.id).toString(),
           projectId: BigInt(item.projectId).toString(),
-          expenserId: BigInt(item.expenserId).toString(),
+          projecStatus: projectStatusMap[item.projecStatus],
           figure: BigInt(item.figure).toString(),
           status: fundStatusMap[item.status] || "未知状态",
-          type: map[item.type] || "其他费用",
           gmtCreate: convertTimestamp(item.gmtCreate),
           gmtModify:
             item.gmtModify === 0 ? "未修改" : convertTimestamp(item.gmtModify),
+          gmtSubmit:
+            item.gmtSubmit === 0 ? "未提交" : convertTimestamp(item.gmtSubmit),
           gmtReview:
             item.gmtReview === 0 ? "未审核" : convertTimestamp(item.gmtReview),
           relativeCreate: formatTime(item.gmtCreate).toString(),
@@ -32,6 +41,10 @@ const fetchTableData = async () => {
             item.gmtModify === 0
               ? "未修改"
               : formatTime(item.gmtModify).toString(),
+          relativeSubmit:
+            item.gmtSubmit === 0
+              ? "未提交"
+              : formatTime(item.gmtSubmit).toString(),
           relativeReview:
             item.gmtReview === 0
               ? "未审核"
@@ -62,33 +75,20 @@ onMounted(() => {
 
 // 删除经费申请
 const showDeleteButton = (status) => {
-  // 仅状态为"未处理"或“拒绝报销”的经费申请可以删除
-  return (
-    status === fundStatusContant.STATUS_UNPROCESSED ||
-    status === fundStatusContant.STATUS_REJECT
-  );
+  // 仅状态为"草稿"的经费申请可以删除
+  return status === fundStatusContant.STATUS_DRAFT;
 };
 const centerDialogVisible = ref(false);
 const formDelte = ref({
   id: null,
 });
-const status = ref("");
 // 对话框
-const deleteDialog = async (ProjectId, ProjectStatus) => {
+const deleteDialog = async (id) => {
   centerDialogVisible.value = true;
-  formDelte.value.id = BigInt(ProjectId);
-  status.value = ProjectStatus;
+  formDelte.value.id = BigInt(id);
 };
 // 删除经费申请接口
 const deleteFundApply = async () => {
-  if (
-    status.value !== fundStatusContant.STATUS_UNPROCESSED &&
-    status.value !== fundStatusContant.STATUS_REJECT
-  ) {
-    alert("不可以删除当前的经费申请");
-    centerDialogVisible.value = false;
-    return;
-  }
   deleteFund(formDelte.value)
     .then((response) => {
       if (response.data.code === 0) {
@@ -109,25 +109,20 @@ const deleteFundApply = async () => {
 
 // 审核对话框
 const showReviewButton = (status) => {
-  // 项目处于"预处理"才可以进行删除
-  return status === fundStatusContant.STATUS_UNPROCESSED;
+  // 状态为“已提交”的经费申请可以进行审核
+  return status === fundStatusContant.STATUS_SUBMIT;
 };
 const centerDialogVisible2 = ref(false);
 const formReview = ref({
   id: null,
   approved: null,
+  content: ""
 });
-const reviewDialog = async (ProjectId, ProjectStatus) => {
+const reviewDialog = async (id) => {
   centerDialogVisible2.value = true;
-  formReview.value.id = BigInt(ProjectId);
-  status.value = ProjectStatus;
+  formReview.value.id = BigInt(id);
 };
 const reviewFundApply = async () => {
-  if (status.value !== fundStatusContant.STATUS_UNPROCESSED) {
-    alert("无法审核当前的经费申请");
-    centerDialogVisible2.value = false;
-    return;
-  }
   reviewFund(formReview.value)
     .then((response) => {
       if (response.data.code === 0) {
@@ -145,6 +140,82 @@ const reviewFundApply = async () => {
       centerDialogVisible2.value = false;
     });
 };
+
+// ---------------------- 提交经费
+const showSubmitButton = (status, projecStatus) => {
+  // 经费处于"草稿" 并且 项目处于“已立项”才可以被提交
+  return (
+    status === fundStatusContant.STATUS_DRAFT &&
+    projecStatus === projectStatusContant.STATUS_LAUNCHED
+  );
+};
+const centerDialogVisibleSubmit = ref(false);
+const formSubmit = ref({
+  id: null,
+  content: "",
+  figure: "",
+  type: "",
+});
+const submitDialog = async (id, content, figure, type) => {
+  centerDialogVisibleSubmit.value = true;
+  formSubmit.value.id = BigInt(id); // 经费id
+  formSubmit.value.content = content; // 经费内容
+  formSubmit.value.figure = figure; // 经费金额
+  formSubmit.value.type = type; // 经费类型
+};
+const submitFundApply = async () => {
+  submitFund(formSubmit.value)
+    .then((response) => {
+      if (response.data.code === 0) {
+        fetchTableData();
+        alert(response.data.msg || "提交成功");
+      } else {
+        alert(response.data.msg || "提交失败");
+      }
+    })
+    .catch((error) => {
+      alert("提交错误");
+      console.log("提交错误", error);
+    })
+    .finally(() => {
+      centerDialogVisibleSubmit.value = false;
+    });
+};
+
+// --------------------- 修改经费
+const showModifyButton = (status) => {
+  // 经费处于"草稿"才可以被提交
+  return status === fundStatusContant.STATUS_DRAFT;
+};
+const centerDialogVisibleModify = ref(false);
+const formModify = ref({
+  id: null,
+  content: "",
+  figure: "",
+  type: "",
+});
+const modifyDialog = async (id) => {
+  centerDialogVisibleModify.value = true;
+  formModify.value.id = BigInt(id); // 经费id
+};
+const fundModify = async () => {
+  modifyFund(formModify.value)
+    .then((response) => {
+      if (response.data.code === 0) {
+        fetchTableData();
+        alert(response.data.msg || "修改成功");
+      } else {
+        alert(response.data.msg || "修改失败");
+      }
+    })
+    .catch((error) => {
+      alert("修改错误");
+      console.log("修改错误", error);
+    })
+    .finally(() => {
+      centerDialogVisibleModify.value = false;
+    });
+};
 </script>
 
 <template>
@@ -152,7 +223,7 @@ const reviewFundApply = async () => {
     <el-table :data="tableData">
       <el-table-column
         fixed
-        label="经费申请人"
+        label="项目状态"
         min-width="120"
         max-width="200"
         show-overflow-tooltip
@@ -165,12 +236,11 @@ const reviewFundApply = async () => {
             width="auto"
           >
             <template #default>
-              <div>用户名: {{ scope.row.expenserName }}</div>
-              <div>邮箱: {{ scope.row.expenserEmail }}</div>
+              <div>状态: {{ scope.row.projecStatus }}</div>
             </template>
             <template #reference>
               <el-tag effect="plain" type="success">{{
-                scope.row.expenserName
+                scope.row.projecStatus
               }}</el-tag>
             </template>
           </el-popover>
@@ -287,14 +357,44 @@ const reviewFundApply = async () => {
           </el-popover>
         </template>
       </el-table-column>
-      <el-table-column fixed="right" label="操作" min-width="120" max-width="220">
+      <el-table-column
+        fixed="right"
+        label="操作"
+        min-width="120"
+        max-width="300"
+      >
         <template #default="scope">
+          <el-button
+            link
+            type="primary"
+            size="small"
+            v-if="showSubmitButton(scope.row.status, scope.row.projecStatus)"
+            @click="
+              submitDialog(
+                scope.row.id,
+                scope.row.content,
+                scope.row.figure,
+                scope.row.type
+              )
+            "
+          >
+            提交
+          </el-button>
+          <el-button
+            link
+            type="primary"
+            size="small"
+            v-if="showModifyButton(scope.row.status)"
+            @click="modifyDialog(scope.row.id)"
+          >
+            修改
+          </el-button>
           <el-button
             link
             type="danger"
             size="small"
             v-if="showDeleteButton(scope.row.status)"
-            @click="deleteDialog(scope.row.id, scope.row.status)"
+            @click="deleteDialog(scope.row.id)"
           >
             删除
           </el-button>
@@ -303,7 +403,7 @@ const reviewFundApply = async () => {
             type="primary"
             size="small"
             v-if="showReviewButton(scope.row.status)"
-            @click="reviewDialog(scope.row.id, scope.row.status)"
+            @click="reviewDialog(scope.row.id)"
           >
             审核
           </el-button>
@@ -312,32 +412,98 @@ const reviewFundApply = async () => {
     </el-table>
   </div>
 
-  <!-- 提示框 -->
+  <!-- 提交经费 -->
+  <el-dialog v-model="centerDialogVisible" title="提交经费" width="500" center>
+    <span> 确认提交？提交后不可修改 </span>
+    <template #footer>
+      <div class="dialog-footer">
+        <el-button @click="centerDialogVisibleSubmit = false">取消</el-button>
+        <el-button type="primary" @click="submitFundApply()"> 确认 </el-button>
+      </div>
+    </template>
+  </el-dialog>
+
+  <!-- 修改经费 -->
+  <el-dialog
+    v-model="centerDialogVisibleModify"
+    title="修改经费"
+    width="600"
+    center
+  >
+    <div style="display: flex; flex-direction: column; align-items: center">
+      <el-form :model="formModify" label-width="auto" style="width: 70%">
+        <el-form-item label="经费类型">
+          <el-select v-model="formModify.type" placeholder="请选择类型">
+            <el-option
+              v-for="item in optionTypes"
+              :key="item.id"
+              :label="item.name"
+              :value="item.id"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="经费金额">
+          <el-input
+            v-model="formModify.figure"
+            type="number"
+            placeholder="请输入经费金额"
+          />
+        </el-form-item>
+
+        <el-form-item label="经费内容">
+          <el-input
+            v-model="formModify.content"
+            type="textarea"
+            placeholder="请输入经费内容"
+          />
+        </el-form-item>
+      </el-form>
+    </div>
+    <template #footer>
+      <div class="dialog-footer">
+        <el-button @click="centerDialogVisibleModify = false">取消</el-button>
+        <el-button type="primary" @click="fundModify()"> 确认 </el-button>
+      </div>
+    </template>
+  </el-dialog>
+
+  <!-- 删除经费 -->
   <el-dialog v-model="centerDialogVisible" title="提示" width="500" center>
     <span> 确认删除？删除后不可修改 </span>
     <template #footer>
       <div class="dialog-footer">
         <el-button @click="centerDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="deleteFundApply()"> 确认 </el-button>
+        <el-button type="danger" @click="deleteFundApply()"> 确认 </el-button>
       </div>
     </template>
   </el-dialog>
 
-  <el-dialog v-model="centerDialogVisible2" title="提示" width="500" center>
-    <input
-      type="radio"
-      name="approved"
-      v-model="formReview.approved"
-      :value="true"
-      checked
-    />同意报销
-    <input
-      type="radio"
-      name="approved"
-      v-model="formReview.approved"
-      :value="false"
-      checked
-    />拒绝报销
+  <!-- 审核经费 -->
+  <el-dialog v-model="centerDialogVisible2" title="审核经费" width="600" center>
+      <div style="display: flex; flex-direction: row; margin-bottom: 20px;">
+        <label for="" style="margin-right: 20px;">审核内容</label>
+        <el-input
+          v-model="formReview.content"
+          type="textarea"
+          placeholder="请输入审核内容"
+          style="width: 80%"
+        />
+      </div>
+      <label for="" style="margin-right: 20px;">确认同意</label>
+      <input
+        type="radio"
+        name="approved"
+        v-model="formReview.approved"
+        :value="true"
+        checked
+      />同意
+      <input
+        type="radio"
+        name="approved"
+        v-model="formReview.approved"
+        :value="false"
+        checked
+      />拒绝
     <template #footer>
       <div class="dialog-footer">
         <el-button @click="centerDialogVisible2 = false">取消</el-button>
@@ -349,7 +515,6 @@ const reviewFundApply = async () => {
   
 <style scoped>
 .container {
-  /* border: 2px solid red; */
   display: flex;
   justify-content: center;
   align-items: start;

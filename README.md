@@ -1,24 +1,6 @@
-# rpms
+# SCAU 数据库课程设计
 
-## Project setup
-```
-npm install
-```
+## 科研项目管理系统
 
-### Compiles and hot-reloads for development
-```
-npm run serve
-```
+### 功能模块
 
-### Compiles and minifies for production
-```
-npm run build
-```
-
-### Lints and fixes files
-```
-npm run lint
-```
-
-### Customize configuration
-See [Configuration Reference](https://cli.vuejs.org/config/).

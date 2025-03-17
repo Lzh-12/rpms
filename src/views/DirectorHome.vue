@@ -1,13 +1,38 @@
 <script setup>
-import { ref } from "vue";
+import { ref, onMounted } from "vue";
 import router from "@/router";
 import { loginOut } from "@/api/auth/index.js";
 import { useRoute } from "vue-router";
+import { getUserInfoService } from "@/api/user/index.js";
 
 // 接收登录传来的用户id
 const route = useRoute();
 const loginId = ref(route.query.loginId); // 获取参数
 console.log("账号 ID:", loginId.value);
+
+const userName = ref("");
+// 加载用户信息
+onMounted(() => {
+  getUserInfo();
+});
+
+const getUserInfo = async () => {
+  getUserInfoService()
+    .then((response) => {
+      if (response.data.code === 0) {
+        userName.value = response.data.data.name; // 获取用户名
+
+        console.log("laicia", response.data)
+        console.log("laicia", userName.value)
+      } else {
+        alert("加载用户信息失败");
+      }
+    })
+    .catch((error) => {
+      alert("加载用户信息失败");
+      console.log("加载用户信息失败", error);
+    });
+};
 
 const breadcrumbItems = ref([{ name: "首页", path: "/" }]);
 
@@ -112,7 +137,10 @@ const userLoginOut = async () => {
           "
         >
           科研项目管理系统
-          <el-button @click="centerDialogVisible = true">退出</el-button>
+
+          <div>
+            <el-button @click="centerDialogVisible = true">退出</el-button>
+          </div>
         </div>
       </el-header>
       <el-container>

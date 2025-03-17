@@ -297,7 +297,7 @@ const getMemberProject = async () => {
           ...item,
           id: BigInt(item.id),
         }));
-        alert(response.data.msg || "查看成功");
+        // alert(response.data.msg || "查看成功");
       } else {
         alert(response.data.msg || "查看失败");
       }
@@ -312,6 +312,7 @@ const getMemberProject = async () => {
 };
 
 // ------------------- 邀请|踢出项目成员
+// const visible = ref(false)
 const formDeleteMember = ref({
   id: null,
   email: "",
@@ -466,7 +467,8 @@ const showDelete = (id) => {
       <el-button type="primary" :icon="Search" @click="searchProjects"
         >查询</el-button
       >
-      <el-button @click="fetchProjects">全部</el-button>
+      <el-button @click="fetchProjects">我的创建</el-button>
+      <el-button @click="fetchProjects">我的参与</el-button>
     </div>
 
     <!-- 展示申报的项目 -->
@@ -486,15 +488,15 @@ const showDelete = (id) => {
           <el-table-column
             fixed
             prop="title"
-            label="项目标题"
-            min-width="110"
+            label="标题"
+            min-width="100"
             max-width="170"
             show-overflow-tooltip
           />
           <el-table-column
             prop="leaderName"
-            label="项目负责人"
-            min-width="90"
+            label="负责人"
+            min-width="100"
             max-width="160"
             show-overflow-tooltip
           >
@@ -517,8 +519,12 @@ const showDelete = (id) => {
               </el-popover>
             </template>
           </el-table-column>
-          <el-table-column prop="status" label="项目状态" min-width="90"
-                max-width="160">
+          <el-table-column
+            prop="status"
+            label="状态"
+            min-width="90"
+            max-width="160"
+          >
             <template #default="scope">
               <el-popover
                 effect="light"
@@ -537,7 +543,7 @@ const showDelete = (id) => {
             </template>
           </el-table-column>
           <el-table-column
-            label="项目创建时间"
+            label="创建时间"
             min-width="110"
             max-width="150"
             show-overflow-tooltip
@@ -559,9 +565,9 @@ const showDelete = (id) => {
             </template>
           </el-table-column>
           <el-table-column
-            label="项目修改时间"
+            label="修改时间"
             min-width="110"
-                max-width="160"
+            max-width="160"
             show-overflow-tooltip
           >
             <template #default="scope">
@@ -581,7 +587,7 @@ const showDelete = (id) => {
             </template>
           </el-table-column>
           <el-table-column
-            label="项目审核时间"
+            label="审核时间"
             min-width="110"
             max-width="160"
             show-overflow-tooltip
@@ -603,11 +609,11 @@ const showDelete = (id) => {
             </template>
           </el-table-column>
           <el-table-column
-            label="项目结项时间"
+            label="结项时间"
             class-name="time"
             show-overflow-tooltip
           >
-          <template #default="scope">
+            <template #default="scope">
               <el-popover
                 effect="light"
                 trigger="hover"
@@ -629,7 +635,7 @@ const showDelete = (id) => {
             fixed="right"
             label="操作"
             min-width="190"
-            max-width="270"
+            max-width="280"
           >
             <template #default="scope">
               <el-button
@@ -677,7 +683,7 @@ const showDelete = (id) => {
                 v-if="showConclusionButton(scope.row.status)"
                 @click="conclusionDialog(scope.row.id, scope.row.title)"
                 >结题</el-button
-              >  
+              >
             </template>
           </el-table-column>
         </el-table>
@@ -817,7 +823,6 @@ const showDelete = (id) => {
           v-model="ProjectData.type"
           clearable
           placeholder="请选择类型"
-          style="width: 100%"
         >
           <el-option
             v-for="item in optionTypes"
@@ -832,7 +837,6 @@ const showDelete = (id) => {
           v-model="ProjectData.area"
           clearable
           placeholder="请选择领域"
-          style="width: 100%"
         >
           <el-option
             v-for="item in optionAreas"
@@ -870,17 +874,70 @@ const showDelete = (id) => {
     <el-dialog
       v-model="centerDialogVisibleMember"
       title="项目成员"
-      width="700"
+      min-width="800"
+      max-width="1100"
       align-center
     >
       <div>
         <el-table :data="memberData" stripe style="width: 100%">
-          <el-table-column fixed prop="id" label="用户id" width="150" />
-          <el-table-column prop="email" label="用户邮箱" width="200" />
-          <el-table-column prop="name" label="用户名" width="100" />
-          <el-table-column prop="phone" label="用户手机号" width="100" />
+          <!-- <el-table-column fixed prop="id" label="用户id" min-width="100" max-width="150"/> -->
+          <el-table-column
+            fixed
+            prop="email"
+            label="用户邮箱"
+            min-width="170"
+            max-width="200"
+          />
+          <el-table-column
+            prop="name"
+            label="用户名"
+            min-width="120"
+            max-width="200"
+          />
+          <el-table-column
+            prop="phone"
+            label="用户手机号"
+            min-width="130"
+            max-width="200"
+          />
+          <el-table-column
+            prop="qq"
+            label="QQ"
+            min-width="120"
+            max-width="180"
+          />
+          <el-table-column
+            prop="qq"
+            label="微信号"
+            min-width="120"
+            max-width="180"
+          />
+          <el-table-column
+            prop="institution"
+            label="所属机构"
+            min-width="100"
+            max-width="160"
+          />
           <el-table-column fixed="right" label="操作" width="100">
             <template #default="scope">
+              <!-- <el-popover :visible="visible" placement="top" :width="160">
+                <p>确定删除该成员吗？</p>
+                <div style="text-align: right; margin: 0">
+                  <el-button size="small" text @click="visible = false"
+                    >取消</el-button
+                  >
+                  <el-button
+                    size="small"
+                    type="danger"
+                    @click="deleteMember(scope.row.email)"
+                  >
+                    确认
+                  </el-button>
+                </div>
+                <template #reference>
+                  <el-button @click="visible = true" v-if="showDelete(scope.row.id)">删除</el-button>
+                </template>
+              </el-popover> -->
               <el-button
                 link
                 type="danger"
@@ -970,6 +1027,14 @@ const showDelete = (id) => {
   width: 100%;
   display: flex;
   flex-direction: column;
+}
+
+.el-input {
+  width: 300px;
+}
+
+.el-select {
+  width: 300px;
 }
 
 .container-find {

@@ -328,18 +328,18 @@ const getMemberProject = async () => {
     <el-dialog
       v-model="centerDialogVisibleMember"
       title="项目成员"
-      width="700"
+      width="800"
       align-center
     >
       <div>
         <el-table :data="memberData" stripe style="width: 100%">
           <el-table-column fixed prop="id" label="用户id" width="150" />
-          <el-table-column prop="email" label="用户邮箱" width="120" />
+          <el-table-column prop="email" label="用户邮箱" min-width="120" max-width="200" />
           <el-table-column prop="name" label="用户名" width="100" />
-          <el-table-column prop="phone" label="用户手机号" width="100" />
-          <el-table-column fixed="right" label="操作" width="100">
+          <el-table-column prop="phone" label="用户手机号" min-width="100" max-width="200"/>
+          <!-- <el-table-column fixed="right" label="操作" width="100">
             <template #default> </template>
-          </el-table-column>
+          </el-table-column> -->
         </el-table>
       </div>
       <template #footer>

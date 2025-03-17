@@ -22,8 +22,11 @@ const gotoPage = (number) => {
   
 <template>
   <div class="container">
-    <el-aside :style="{ width: isCollapse ? '64px' : '200px' }" style="background-color: #ffffff;">
-      <el-radio-group v-model="isCollapse" style="margin-bottom: 20px;">
+    <el-aside
+      :style="{ width: isCollapse ? '64px' : '200px' }"
+      style="background-color: #ffffff"
+    >
+      <el-radio-group v-model="isCollapse" style="margin-bottom: 20px">
         <el-radio-button :value="false">展开</el-radio-button>
         <el-radio-button :value="true">隐藏</el-radio-button>
       </el-radio-group>
@@ -63,7 +66,7 @@ const gotoPage = (number) => {
           <div v-else-if="mode === '2'">
             <FundsList></FundsList>
           </div>
-          <!-- 已经费申请列表-->
+          <!-- 已通过经费申请列表-->
           <div v-else-if="mode === '3'">
             <FundsApprovedList></FundsApprovedList>
           </div>

@@ -18,6 +18,24 @@ export const reviewFund = (fundData) => {
     return sendRequest("put", `/fund/${params.get('id')}/review`, params);
 }
 
+// 提交经费
+export const submitFund = (fundData) => {
+    const params = new URLSearchParams()
+    for(let key in fundData){
+        params.append(key, fundData[key])
+    }
+    return sendRequest("put", `/fund/${params.get('id')}/submit`, params);
+}
+
+// 修改经费
+export const modifyFund = (fundData) => {
+    const params = new URLSearchParams()
+    for(let key in fundData){
+        params.append(key, fundData[key])
+    }
+    return sendRequest("put", `/fund/${params.get('id')}/modify`, params);
+}
+
 // 获取当前用户发起的经费申请列表
 export const myFund = () => {
     return sendRequest("get", `/fund/my`);
@@ -31,6 +49,7 @@ export const projectFund = (fundData) => {
     }
     return sendRequest("post", `/fund/project/${params.get('id')}`, params);
 }
+
 
 // 获取项目的全部状态的经费列表
 export const projectAllFund = (fundId) => {

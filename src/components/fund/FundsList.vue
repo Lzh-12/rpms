@@ -1,9 +1,16 @@
 <script setup>
 import { ref, onMounted } from "vue";
-import { myFund, deleteFund } from "@/api/fund/index.js";
+import {
+  myFund,
+  deleteFund,
+  modifyFund,
+  submitFund,
+} from "@/api/fund/index.js";
 import {
   fundStatusContant,
   fundStatusMap,
+  projectStatusContant,
+  projectStatusMap
 } from "@/constants/statusConstants.js";
 import { convertTimestamp, formatTime } from "@/utils/timeConverter.js";
 
@@ -19,10 +26,9 @@ const fetchTableData = async () => {
           ...item,
           id: BigInt(item.id).toString(),
           projectId: BigInt(item.projectId).toString(),
-          expenserId: BigInt(item.expenserId).toString(),
+          projecStatus: projectStatusMap[item.projecStatus],
           figure: BigInt(item.figure).toString(),
           status: fundStatusMap[item.status] || "未知状态",
-          type: map[item.type] || "其他费用",
           gmtCreate: convertTimestamp(item.gmtCreate),
           gmtModify:
             item.gmtModify === 0 ? "未修改" : convertTimestamp(item.gmtModify),
@@ -63,33 +69,20 @@ onMounted(() => {
 
 // 删除经费申请
 const showDeleteButton = (status) => {
-  // 仅状态为"未处理"或“拒绝报销”的经费申请可以删除
-  return (
-    status === fundStatusContant.STATUS_UNPROCESSED ||
-    status === fundStatusContant.STATUS_REJECT
-  );
+  // 仅状态为"草稿"的经费申请可以删除
+  return status === fundStatusContant.STATUS_DRAFT;
 };
 const centerDialogVisible = ref(false);
 const formDelte = ref({
   id: null,
 });
-const status = ref("");
 // 对话框
-const deleteDialog = async (ProjectId, ProjectStatus) => {
+const deleteDialog = async (id) => {
   centerDialogVisible.value = true;
-  formDelte.value.id = BigInt(ProjectId);
-  status.value = ProjectStatus;
+  formDelte.value.id = BigInt(id);
 };
 // 删除经费申请接口
 const deleteFundApply = async () => {
-  if (
-    status.value !== fundStatusContant.STATUS_UNPROCESSED &&
-    status.value !== fundStatusContant.STATUS_REJECT
-  ) {
-    alert("不可以删除当前的经费申请");
-    centerDialogVisible.value = false;
-    return;
-  }
   deleteFund(formDelte.value)
     .then((response) => {
       if (response.data.code === 0) {
@@ -107,6 +100,82 @@ const deleteFundApply = async () => {
       centerDialogVisible.value = false;
     });
 };
+
+// ---------------------- 提交经费
+const showSubmitButton = (status, projecStatus) => {
+  // 经费处于"草稿" 并且 项目处于“已立项”才可以被提交
+  return (
+    status === fundStatusContant.STATUS_DRAFT &&
+    projecStatus === projectStatusContant.STATUS_LAUNCHED
+  );
+};
+const centerDialogVisibleSubmit = ref(false);
+const formSubmit = ref({
+  id: null,
+  content: "",
+  figure: "",
+  type: "",
+});
+const submitDialog = async (id, content, figure, type) => {
+  centerDialogVisibleSubmit.value = true;
+  formSubmit.value.id = BigInt(id); // 经费id
+  formSubmit.value.content = content; // 经费内容
+  formSubmit.value.figure = figure; // 经费金额
+  formSubmit.value.type = type; // 经费类型
+};
+const submitFundApply = async () => {
+  submitFund(formSubmit.value)
+    .then((response) => {
+      if (response.data.code === 0) {
+        fetchTableData();
+        alert(response.data.msg || "提交成功");
+      } else {
+        alert(response.data.msg || "提交失败");
+      }
+    })
+    .catch((error) => {
+      alert("提交错误");
+      console.log("提交错误", error);
+    })
+    .finally(() => {
+      centerDialogVisibleSubmit.value = false;
+    });
+};
+
+// --------------------- 修改经费
+const showModifyButton = (status) => {
+  // 经费处于"草稿"才可以被提交
+  return status === fundStatusContant.STATUS_DRAFT;
+};
+const centerDialogVisibleModify = ref(false);
+const formModify = ref({
+  id: null,
+  content: "",
+  figure: "",
+  type: "",
+});
+const modifyDialog = async (id) => {
+  centerDialogVisibleModify.value = true;
+  formModify.value.id = BigInt(id); // 经费id
+};
+const fundModify = async () => {
+  modifyFund(formModify.value)
+    .then((response) => {
+      if (response.data.code === 0) {
+        fetchTableData();
+        alert(response.data.msg || "修改成功");
+      } else {
+        alert(response.data.msg || "修改失败");
+      }
+    })
+    .catch((error) => {
+      alert("修改错误");
+      console.log("修改错误", error);
+    })
+    .finally(() => {
+      centerDialogVisibleModify.value = false;
+    });
+};
 </script>
 
 <template>
@@ -114,7 +183,7 @@ const deleteFundApply = async () => {
     <el-table :data="tableData">
       <el-table-column
         fixed
-        label="经费申请人"
+        label="项目状态"
         min-width="120"
         max-width="200"
         show-overflow-tooltip
@@ -127,12 +196,11 @@ const deleteFundApply = async () => {
             width="auto"
           >
             <template #default>
-              <div>用户名: {{ scope.row.expenserName }}</div>
-              <div>邮箱: {{ scope.row.expenserEmail }}</div>
+              <div>状态: {{ scope.row.projecStatus }}</div>
             </template>
             <template #reference>
               <el-tag effect="plain" type="success">{{
-                scope.row.expenserName
+                scope.row.projecStatus
               }}</el-tag>
             </template>
           </el-popover>
@@ -152,7 +220,12 @@ const deleteFundApply = async () => {
         max-width="200"
         show-overflow-tooltip
       />
-      <el-table-column prop="status" label="经费状态" min-width="120" max-widt="200">
+      <el-table-column
+        prop="status"
+        label="经费状态"
+        min-width="120"
+        max-widt="200"
+      >
         <template #default="scope">
           <el-popover
             effect="light"
@@ -244,8 +317,38 @@ const deleteFundApply = async () => {
           </el-popover>
         </template>
       </el-table-column>
-      <el-table-column fixed="right" label="操作" min-width="100" max-width="180">
+      <el-table-column
+        fixed="right"
+        label="操作"
+        min-width="110"
+        max-width="250"
+      >
         <template #default="scope">
+          <el-button
+            link
+            type="primary"
+            size="small"
+            v-if="showSubmitButton(scope.row.status, scope.row.projecStatus)"
+            @click="
+              submitDialog(
+                scope.row.id,
+                scope.row.content,
+                scope.row.figure,
+                scope.row.type
+              )
+            "
+          >
+            提交
+          </el-button>
+          <el-button
+            link
+            type="primary"
+            size="small"
+            v-if="showModifyButton(scope.row.status)"
+            @click="modifyDialog(scope.row.id)"
+          >
+            修改
+          </el-button>
           <el-button
             link
             type="danger"
@@ -259,9 +362,63 @@ const deleteFundApply = async () => {
       </el-table-column>
     </el-table>
   </div>
+ <!-- 提交经费 -->
+ <el-dialog v-model="centerDialogVisible" title="提交经费" width="500" center>
+    <span> 确认提交？提交后不可修改 </span>
+    <template #footer>
+      <div class="dialog-footer">
+        <el-button @click="centerDialogVisibleSubmit = false">取消</el-button>
+        <el-button type="primary" @click="submitFundApply()"> 确认 </el-button>
+      </div>
+    </template>
+  </el-dialog>
 
-  <!-- 提示框 -->
-  <el-dialog v-model="centerDialogVisible" title="提示" width="500" center>
+  <!-- 修改经费 -->
+  <el-dialog
+    v-model="centerDialogVisibleModify"
+    title="修改经费"
+    width="600"
+    center
+  >
+    <div style="display: flex; flex-direction: column; align-items: center">
+      <el-form :model="formModify" label-width="auto" style="width: 70%">
+        <el-form-item label="经费类型">
+          <el-select v-model="formModify.type" placeholder="请选择类型">
+            <el-option
+              v-for="item in optionTypes"
+              :key="item.id"
+              :label="item.name"
+              :value="item.id"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="经费金额">
+          <el-input
+            v-model="formModify.figure"
+            type="number"
+            placeholder="请输入经费金额"
+          />
+        </el-form-item>
+
+        <el-form-item label="经费内容">
+          <el-input
+            v-model="formModify.content"
+            type="textarea"
+            placeholder="请输入经费内容"
+          />
+        </el-form-item>
+      </el-form>
+    </div>
+    <template #footer>
+      <div class="dialog-footer">
+        <el-button @click="centerDialogVisibleModify = false">取消</el-button>
+        <el-button type="primary" @click="fundModify()"> 确认 </el-button>
+      </div>
+    </template>
+  </el-dialog>
+
+  <!-- 删除经费 -->
+  <el-dialog v-model="centerDialogVisible" title="删除经费" width="500" center>
     <span> 确认删除？删除后不可修改 </span>
     <template #footer>
       <div class="dialog-footer">

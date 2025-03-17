@@ -1,80 +1,81 @@
 <script setup>
 import { ref, onMounted, watchEffect } from "vue";
-import { Search } from "@element-plus/icons-vue";
-import { submitTask, getAllTask, getMyTask } from "@/api/task/index.js";
-import { useRoute } from "vue-router";
-import { projectMy } from "@/api/project/index.js";
+// import { Search } from "@element-plus/icons-vue";
+import { getMyTask, finishTask, ensureTask } from "@/api/task/index.js";
+// import { useRoute } from "vue-router";
+// import { projectMy } from "@/api/project/index.js";
 import { convertTimestamp, formatTime } from "@/utils/timeConverter.js";
 import {
   taskStatusContant,
   taskStatusMap,
+  projectStatusMap,
 } from "@/constants/statusConstants.js";
 
 // 用户id
-const route = useRoute();
-const temp = route.query.loginId;
-const loginId = BigInt(temp);
+// const route = useRoute();
+// const temp = route.query.loginId;
+// const loginId = BigInt(temp);
 // console.log("loginId:", loginId);
 
 // 项目列表数据模型
-const options = ref([]);
+// const options = ref([]);
 // 项目列表
-const fetchOptions = async () => {
-  projectMy()
-    .then((response) => {
-      if (response.data.code === 0) {
-        // 获取所有项目的id
-        options.value = response.data.data.map((item) => ({
-          ...item,
-          id: BigInt(item.id).toString(),
-        }));
-      } else {
-        alert(response.data.msg || "加载项目失败");
-      }
-    })
-    .catch((error) => {
-      alert("加载项目错误");
-      console.log("加载项目错误", error);
-    });
-};
+// const fetchOptions = async () => {
+//   projectMy()
+//     .then((response) => {
+//       if (response.data.code === 0) {
+//         // 获取所有项目的id
+//         options.value = response.data.data.map((item) => ({
+//           ...item,
+//           id: BigInt(item.id).toString(),
+//         }));
+//       } else {
+//         alert(response.data.msg || "加载项目失败");
+//       }
+//     })
+//     .catch((error) => {
+//       alert("加载项目错误");
+//       console.log("加载项目错误", error);
+//     });
+// };
 
-const tableData = ref([]);
+// const tableData = ref([]);
 // 提交任务数据模型
-const taskData = ref({
-  id: null,
-  result: "",
-});
-const centerDialogVisible = ref(false);
-// 提交对话框
-function submit(number) {
-  taskData.value.id = BigInt(number);
-  centerDialogVisible.value = true;
-}
-const showSubmitButton = (status, id) => {
-  // “未处理” 状态才能提交 被分配到该任务的成员 才可以对该任务进行提交
-  return (
-    status === taskStatusContant.STATUS_UNPROCESSED && BigInt(id) === loginId
-  );
-};
-// 提交任务接口
-const submitContent = async () => {
-  submitTask(taskData.value)
-    .then((response) => {
-      if (response.data.code === 0) {
-        getTaskMy();
-        alert(response.data.msg || "提交成功");
-      } else {
-        alert(response.data.msg || "提交失败");
-      }
-    })
-    .catch((error) => {
-      alert("提交错误");
-      console.log("提交错误：", error);
-    })
-    .finally(() => {
-      centerDialogVisible.value = false;
-    });
-};
+// const taskData = ref({
+//   id: null,
+//   result: "",
+// });
+// const centerDialogVisible = ref(false);
+// // 提交对话框
+// function submit(number) {
+//   taskData.value.id = BigInt(number);
+//   centerDialogVisible.value = true;
+// }
+// const showSubmitButton = (status, id) => {
+//   // “未处理” 状态才能提交 被分配到该任务的成员 才可以对该任务进行提交
+//   return (
+//     status === taskStatusContant.STATUS_UNPROCESSED && BigInt(id) === loginId
+//   );
+// };
+// // 提交任务接口
+// const submitContent = async () => {
+//   submitTask(taskData.value)
+//     .then((response) => {
+//       if (response.data.code === 0) {
+//         getTaskMy();
+//         alert(response.data.msg || "提交成功");
+//       } else {
+//         alert(response.data.msg || "提交失败");
+//       }
+//     })
+//     .catch((error) => {
+//       alert("提交错误");
+//       console.log("提交错误：", error);
+//     })
+//     .finally(() => {
+//       centerDialogVisible.value = false;
+//     });
+// };
 
 // 项目编号
 const selectValue = ref(null);
@@ -86,39 +87,40 @@ watchEffect(() => {
   formTask.value.id = selectValue.value;
 });
 // 获取对应项目的任务列表接口
-const getTask = async () => {
-  formTask.value.id = BigInt(formTask.value.id);
-  getAllTask(formTask.value)
-    .then((response) => {
-      if (response.data.code === 0) {
-        tableData.value = response.data.data.map((item) => ({
-          ...item,
-          id: BigInt(item.id).toString(),
-          projectId: BigInt(item.projectId).toString(),
-          executorId: BigInt(item.executorId).toString(),
-          status: taskStatusMap[item.status] || "未知状态",
-          gmtFinish:
-            item.gmtFinish === 0 ? "未完成" : convertTimestamp(item.gmtFinish),
-          gmtCreate: convertTimestamp(item.gmtCreate),
-          gmtDeadline: convertTimestamp(item.gmtDeadline),
-          relativeCreate: formatTime(item.gmtCreate).toString(),
-          relativeFinish:
-            item.gmtFinish === 0
-              ? "未完成"
-              : formatTime(item.gmtFinish).toString(),
-          relativeDeadline: formatTime(item.gmtDeadline).toString(),
-        }));
-        alert(response.data.msg || "查询成功");
-      } else {
-        alert(response.data.msg || "查询失败");
-      }
-    })
-    .catch((error) => {
-      alert("错误");
-      console.log("查询错误：", error);
-    });
-};
+// const getTask = async () => {
+//   formTask.value.id = BigInt(formTask.value.id);
+//   getAllTask(formTask.value)
+//     .then((response) => {
+//       if (response.data.code === 0) {
+//         tableData.value = response.data.data.map((item) => ({
+//           ...item,
+//           id: BigInt(item.id).toString(),
+//           projectId: BigInt(item.projectId).toString(),
+//           executorId: BigInt(item.executorId).toString(),
+//           status: taskStatusMap[item.status] || "未知状态",
+//           gmtFinish:
+//             item.gmtFinish === 0 ? "未完成" : convertTimestamp(item.gmtFinish),
+//           gmtCreate: convertTimestamp(item.gmtCreate),
+//           gmtDeadline: convertTimestamp(item.gmtDeadline),
+//           relativeCreate: formatTime(item.gmtCreate).toString(),
+//           relativeFinish:
+//             item.gmtFinish === 0
+//               ? "未完成"
+//               : formatTime(item.gmtFinish).toString(),
+//           relativeDeadline: formatTime(item.gmtDeadline).toString(),
+//         }));
+//         alert(response.data.msg || "查询成功");
+//       } else {
+//         alert(response.data.msg || "查询失败");
+//       }
+//     })
+//     .catch((error) => {
+//       alert("错误");
+//       console.log("查询错误：", error);
+//     });
+// };
 
+const tableData = ref([]);
 // 所有任务列表的接口
 const getTaskMy = async () => {
   getMyTask()
@@ -128,12 +130,20 @@ const getTaskMy = async () => {
           ...item,
           id: BigInt(item.id).toString(),
           projectId: BigInt(item.projectId).toString(),
-          executorId: BigInt(item.executorId).toString(),
-          status: taskStatusMap[item.status] || "未知",
-          gmtFinish: convertTimestamp(item.gmtFinish),
-          gmtCreate: convertTimestamp(item.gmtCreate),
+          projecStatus: projectStatusMap[item.projecStatus],
+          status: taskStatusMap[item.status],
+          gmtSubmit:
+            item.gmtSubmit === 0 ? "未提交" : convertTimestamp(item.gmtSubmit),
+          gmtEnsure:
+            item.gmtEnsure === 0 ? "未确认" : convertTimestamp(item.gmtEnsure),
+          gmtFinish:
+            item.gmtFinish === 0 ? "未完成" : convertTimestamp(item.gmtFinish),
           gmtDeadline: convertTimestamp(item.gmtDeadline),
-          relativeCreate: formatTime(item.gmtCreate).toString(),
+          relativeSubmit: formatTime(item.gmtSubmit).toString(),
+          relativeEnsure:
+            item.gmtEnsure === 0
+              ? "未确认"
+              : formatTime(item.gmtEnsure).toString(),
           relativeFinish:
             item.gmtFinish === 0
               ? "未完成"
@@ -151,15 +161,78 @@ const getTaskMy = async () => {
 };
 // 加载组件时调用 fetchOptions 函数
 onMounted(() => {
-  fetchOptions();
+  // fetchOptions();
   getTaskMy();
 });
+
+// ------------------------- 确认任务
+const showEnsureButton = (status) => {
+  return status === taskStatusContant.STATUS_SUBMIT;
+};
+const centerDialogVisibleEnsure = ref(false);
+const formEnsure = ref({
+  id: null,
+});
+function taskEnsureDialog(id) {
+  formEnsure.value.id = BigInt(id);
+  centerDialogVisibleEnsure.value = true;
+}
+const taskEnsure = async () => {
+  ensureTask()
+    .then((response) => {
+      if (response.data.code === 0) {
+        getTaskMy();
+      } else {
+        alert(response.data.msg || "确认失败");
+      }
+    })
+    .catch((error) => {
+      alert("确认错误");
+      console.log("确认错误", error);
+    })
+    .finally(() => {
+      centerDialogVisibleEnsure.value = false;
+    });
+};
+
+// ------------------------- 完成任务
+const showFinishButton = (status) => {
+  return (status === taskStatusContant.STATUS_SUBMIT ||
+    status === taskStatusContant.STATUS_AGREE);
+};
+const centerDialogVisibleFinish = ref(false);
+const formFinish = ref({
+  id: null,
+  content: "",
+});
+function taskFinishDialog(id) {
+  formFinish.value.id = BigInt(id);
+  centerDialogVisibleFinish.value = true;
+}
+const taskFinish = async () => {
+  finishTask()
+    .then((response) => {
+      if (response.data.code === 0) {
+        getTaskMy();
+      } else {
+        alert(response.data.msg || "提交失败");
+      }
+    })
+    .catch((error) => {
+      alert("提交错误");
+      console.log("提交错误", error);
+    })
+    .finally(() => {
+      centerDialogVisibleFinish.value = false;
+      formFinish.value.content = "";
+    });
+};
 </script>
 
 <template>
   <div class="container">
     <!-- 需要完成的任务 -->
-    <div class="container-task">
+    <!-- <div class="container-task">
       <div>
         <el-select
           v-model="selectValue"
@@ -177,7 +250,7 @@ onMounted(() => {
         <el-button :icon="Search" circle @click="getTask" />
       </div>
       <el-button type="primary" @click="getTaskMy">我的任务</el-button>
-    </div>
+    </div> -->
 
     <div class="container-content">
       <div class="table">
@@ -312,39 +385,80 @@ onMounted(() => {
             max-width="290"
             show-overflow-tooltip
           />
-          <el-table-column fixed="right" label="操作" min-width="120" max-width="220">
+          <el-table-column
+            fixed="right"
+            label="操作"
+            min-width="120"
+            max-width="220"
+          >
             <template #default="scope">
               <el-button
                 link
                 type="primary"
                 size="small"
-                @click="submit(scope.row.id)"
-                v-if="showSubmitButton(scope.row.status, scope.row.executorId)"
+                style="margin-right: 0"
+                v-if="showEnsureButton(scope.row.status, scope.row.executorId)"
+                @click="taskEnsureDialog(scope.row.id)"
               >
-                提交
+                确认
+              </el-button>
+              <el-button
+                link
+                type="primary"
+                size="small"
+                style="margin-right: 0"
+                v-if="showFinishButton(scope.row.status, scope.row.executorId)"
+                @click="taskFinishDialog(scope.row.id)"
+              >
+                完成
               </el-button>
             </template>
           </el-table-column>
         </el-table>
       </div>
 
+      <!-- 确认任务 -->
       <el-dialog
-        v-model="centerDialogVisible"
-        title="任务结果"
+        v-model="centerDialogVisibleEnsure"
+        title="确认任务"
         width="500"
         center
       >
-        <el-form-item label="">
-          <el-input
-            v-model="taskData.result"
-            type="textarea"
-            placeholder="请输入任务结果"
-          />
-        </el-form-item>
+        <span>是否对该任务进行确认？</span>
         <template #footer>
           <div class="dialog-footer">
-            <el-button @click="centerDialogVisible = false">取消</el-button>
-            <el-button type="primary" @click="submitContent"> 确认 </el-button>
+            <el-button @click="centerDialogVisibleEnsure = false"
+              >取消</el-button
+            >
+            <el-button type="primary" @click="taskEnsure">确认</el-button>
+          </div>
+        </template>
+      </el-dialog>
+
+      <!-- 完成任务 -->
+      <el-dialog
+        v-model="centerDialogVisibleFinish"
+        title="完成任务"
+        width="600"
+        center
+      >
+        <div
+          style="display: flex; align-items: center; justify-content: center"
+        >
+          <el-form-item label="任务内容">
+            <el-input
+              v-model="formFinish.content"
+              type="textarea"
+              style="width: 400px"
+            />
+          </el-form-item>
+        </div>
+        <template #footer>
+          <div class="dialog-footer">
+            <el-button @click="centerDialogVisibleFinish = false"
+              >取消</el-button
+            >
+            <el-button type="primary" @click="taskFinish">确认</el-button>
           </div>
         </template>
       </el-dialog>

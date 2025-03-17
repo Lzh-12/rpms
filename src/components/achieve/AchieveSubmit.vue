@@ -1,14 +1,10 @@
 <script setup>
 import { ref, onMounted } from "vue";
-import {
-  achieveDelete,
-  achieveExamine,
-  achieveAll,
-} from "@/api/achieve/index.js";
+import { achieveExamine, achieveAll } from "@/api/achieve/index.js";
 import { projectMy } from "@/api/project";
 import {
-  achieveStatusContant,
   achieveStatusMap,
+  projectStatusMap,
 } from "@/constants/statusConstants.js";
 import { convertTimestamp, formatTime } from "@/utils/timeConverter.js";
 
@@ -17,7 +13,7 @@ const tableData = ref([]);
 const formData = ref({
   id: null,
 });
-// 获取经费申请列表接口
+// 获取成果申请列表接口
 const allAchieve = async () => {
   formData.value.id = BigInt(form.value.id);
   achieveAll(formData.value)
@@ -27,9 +23,9 @@ const allAchieve = async () => {
           ...item,
           id: BigInt(item.id).toString(),
           projectId: BigInt(item.projectId).toString(),
+          projecStatus: projectStatusMap[item.projecStatus],
           submitterId: BigInt(item.submitterId).toString(),
-          status: achieveStatusMap[item.status] || "未知状态",
-          type: map[item.type] || "其他",
+          status: achieveStatusMap[item.status],
           gmtCreate: convertTimestamp(item.gmtCreate).toString(),
           gmtReview:
             item.gmtReview === 0
@@ -56,73 +52,20 @@ const allAchieve = async () => {
     });
 };
 
-const centerDialogVisible = ref(false);
-const formDelete = ref({
-  id: null,
-});
-const status = ref("");
-
-// 对话框
-const deleteDialog = async (ProjectId, ProjectStatus) => {
-  centerDialogVisible.value = true;
-  formDelete.value.id = BigInt(ProjectId);
-  status.value = ProjectStatus;
-};
-// 删除
-const showDeleteButton = (status) => {
-  // 状态为"未处理"或“审批驳回”的成果可以删除
-  return (
-    status === achieveStatusContant.STATUS_UNPROCESSED ||
-    status === achieveStatusContant.STATUS_REJECTED
-  );
-};
-// 删除经费申请接口
-const deleteAchieveApply = async () => {
-  if (
-    status.value !== achieveStatusContant.STATUS_UNPROCESSED ||
-    status.value !== achieveStatusContant.STATUS_REJECTED
-  ) {
-    alert("不可以删除当前的经费申请");
-    centerDialogVisible.value = false;
-    return;
-  }
-  achieveDelete(formDelete.value)
-    .then((response) => {
-      if (response.data.code === 0) {
-        allAchieve();
-        alert(response.data.msg || "删除成功");
-      } else {
-        alert(response.data.msg || "删除失败");
-      }
-    })
-    .catch((error) => {
-      alert("删除错误");
-      console.log("删除错误", error);
-    })
-    .finally(() => {
-      centerDialogVisible.value = false;
-    });
-};
-
 // 审核对话框
 const centerDialogVisible2 = ref(false);
 const formReview = ref({
   id: null,
   approved: null,
+  content: "",
 });
-const showReviewButton = (status) => {
-  // 状态处于"预处理"才可以进行审核
-  return status === achieveStatusContant.STATUS_UNPROCESSED;
-};
-const reviewDialog = async (ProjectId, ProjectStatus) => {
+const reviewDialog = async (id) => {
   centerDialogVisible2.value = true;
-  formReview.value.id = BigInt(ProjectId);
-  status.value = ProjectStatus;
+  formReview.value.id = BigInt(id);
 };
 const reviewAchieveApply = async () => {
-  if (status.value !== achieveStatusContant.STATUS_UNPROCESSED) {
-    alert("无法审核当前的成果申请");
-    centerDialogVisible2.value = false;
+  if (!formReview.value.content) {
+    alert("请输入审核内容");
     return;
   }
   achieveExamine(formReview.value)
@@ -223,9 +166,11 @@ onMounted(() => {
                 <div>邮箱: {{ scope.row.submitterEmail }}</div>
               </template>
               <template #reference>
-                <el-tag effect="plain" type="success">{{
+                <!-- <el-tag effect="plain" type="success"> -->
+                  {{
                   scope.row.submitterName
-                }}</el-tag>
+                }}
+                <!-- </el-tag> -->
               </template>
             </el-popover>
           </template>
@@ -351,18 +296,8 @@ onMounted(() => {
           <template #default="scope">
             <el-button
               link
-              type="danger"
-              size="small"
-              @click="deleteDialog(scope.row.id, scope.row.status)"
-              v-if="showDeleteButton(scope.row.status)"
-            >
-              删除
-            </el-button>
-            <el-button
-              link
               type="primary"
               size="small"
-              v-if="showReviewButton(scope.row.status)"
               @click="reviewDialog(scope.row.id, scope.row.status)"
             >
               审核
@@ -373,34 +308,34 @@ onMounted(() => {
     </div>
   </div>
 
-  <!-- 提示框 -->
-  <el-dialog v-model="centerDialogVisible" title="提示" width="500" center>
-    <span> 确认删除？删除后不可修改 </span>
-    <template #footer>
-      <div class="dialog-footer">
-        <el-button @click="centerDialogVisible = false">取消</el-button>
-        <el-button type="danger" @click="deleteAchieveApply()">
-          确认
-        </el-button>
+  <el-dialog v-model="centerDialogVisible2" title="审核成果" width="700" center>
+    <div style="display: flex; flex-direction: column; align-items: center">
+      <div style="display: flex; flex-direction: row; margin-bottom: 20px">
+        <label for="" style="margin-right: 20px">审核内容</label>
+        <el-input
+          v-model="formReview.content"
+          type="textarea"
+          placeholder="请输入审核内容"
+          style="width: 450px"
+        />
       </div>
-    </template>
-  </el-dialog>
-
-  <el-dialog v-model="centerDialogVisible2" title="提示" width="500" center>
-    <input
-      type="radio"
-      name="approved"
-      v-model="formReview.approved"
-      :value="true"
-      checked
-    />同意报销
-    <input
-      type="radio"
-      name="approved"
-      v-model="formReview.approved"
-      :value="false"
-      checked
-    />拒绝报销
+      <div>
+        <input
+          type="radio"
+          name="approved"
+          v-model="formReview.approved"
+          :value="true"
+          checked
+        />同意
+        <input
+          type="radio"
+          name="approved"
+          v-model="formReview.approved"
+          :value="false"
+          checked
+        />拒绝
+      </div>
+    </div>
     <template #footer>
       <div class="dialog-footer">
         <el-button @click="centerDialogVisible2 = false">取消</el-button>

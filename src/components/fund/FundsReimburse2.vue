@@ -3,7 +3,7 @@ import { ref } from "vue";
 import FundsApply from "./FundsApply.vue";
 import FundsList from "./FundsList2.vue";
 import FundsApprovedList from "./FundsApprovedList.vue";
-import FundsAll from "./FundsAll.vue";
+import FundsSubmit from "./FundsSubmit.vue";
 
 const isCollapse = ref(false);
 const handleOpen = (key, keyPath) => {
@@ -49,7 +49,7 @@ const gotoPage = (number) => {
         </el-menu-item>
         <el-menu-item index="4" @click="gotoPage('4')">
           <el-icon><Folder /></el-icon>
-          <template #title>全部经费申请</template>
+          <template #title>已提交的经费申请</template>
         </el-menu-item>
       </el-menu>
     </el-aside>
@@ -73,7 +73,7 @@ const gotoPage = (number) => {
             <FundsApprovedList></FundsApprovedList>
           </div>
           <div v-else-if="mode === '4'">
-            <FundsAll></FundsAll>
+            <FundsSubmit></FundsSubmit>
           </div>
         </div>
       </el-main>

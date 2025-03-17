@@ -84,12 +84,12 @@ const optionsIsGrant = ref([
 <template>
   <div class="container">
     <div class="table">
-      <el-table :data="tableData" style="width: 100%">
-        <el-table-column fixed prop="id" label="用户编号" width="150" show-overflow-tooltip/>
-        <el-table-column prop="email" label="用户邮箱" width="200" show-overflow-tooltip/>
-        <el-table-column prop="name" label="用户名" width="200" show-overflow-tooltip/>
-        <el-table-column prop="phone" label="用户手机号" width="200" show-overflow-tooltip/>
-        <el-table-column fixed="right" label="操作" min-width="80">
+      <el-table :data="tableData" stripe style="width: 100%">
+        <el-table-column fixed prop="id" label="用户编号" min-width="230" max-width="350" show-overflow-tooltip/>
+        <el-table-column prop="email" label="用户邮箱" min-width="230" max-width="350" show-overflow-tooltip/>
+        <el-table-column prop="name" label="用户名" min-width="200" max-width="350" show-overflow-tooltip/>
+        <el-table-column prop="phone" label="用户手机号" min-width="200" max-width="350" show-overflow-tooltip/>
+        <el-table-column fixed="right" label="操作" min-width="100" max-width="200">
           <template #default="scope">
             <el-button
               link

@@ -3,7 +3,7 @@ import { ref } from "vue";
 import FundsApply from "./FundsApply.vue";
 import FundsList from "./FundsList2.vue";
 import FundsApprovedList from "./FundsApprovedList.vue";
-import FundsAll from "./FundsAll.vue";
+import FundsSubmit from "./FundsSubmit.vue";
 
 const isCollapse = ref(false);
 const handleOpen = (key, keyPath) => {
@@ -64,7 +64,7 @@ const gotoPage = (number) => {
             <FundsApprovedList></FundsApprovedList>
           </div>
           <div v-else-if="mode === '4'">
-            <FundsAll></FundsAll>
+            <FundsSubmit></FundsSubmit>
           </div>
         </div>
       </el-main>

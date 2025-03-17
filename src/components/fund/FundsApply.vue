@@ -13,11 +13,13 @@ const fetchOptions = async () => {
   projectMy()
     .then((response) => {
       if (response.data.code === 0) {
-        // 获取所有项目的id
-        options.value = response.data.data.map((item) => ({
-          ...item,
-          id: BigInt(item.id).toString(),
-        }));
+        // 获取所有已立项的项目的id
+        options.value = response.data.data
+          .filter((item) => item.status === 2)
+          .map((item) => ({
+            ...item,
+            id: BigInt(item.id).toString()
+          }));
       } else {
         alert(response.data.msg || "加载失败");
       }

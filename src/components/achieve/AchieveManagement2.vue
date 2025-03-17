@@ -3,7 +3,7 @@ import { ref } from "vue";
 import AchieveApply from "./AchieveApply.vue";
 import AchieveList from "./AchieveList2.vue";
 import AchieveApprovedList from "./AchieveApprovedList.vue";
-import AchieveAll from "./AchieveAll.vue";
+import AchieveSubmit from "./AchieveSubmit.vue";
 
 const isCollapse = ref(false);
 const handleOpen = (key, keyPath) => {
@@ -49,7 +49,7 @@ const gotoPage = (number) => {
         </el-menu-item>
         <el-menu-item index="4" @click="gotoPage('4')">
           <el-icon><Collection /></el-icon>
-          <template #title>项目全部成果</template>
+          <template #title>已提交的成果</template>
         </el-menu-item>
       </el-menu>
     </el-aside>
@@ -73,7 +73,7 @@ const gotoPage = (number) => {
             <AchieveApprovedList></AchieveApprovedList>
           </div>
           <div v-else-if="mode === '4'">
-            <AchieveAll></AchieveAll>
+            <AchieveSubmit></AchieveSubmit>
           </div>
         </div>
       </el-main>

@@ -7,6 +7,9 @@ import {
   getMyTask,
   deleteTask,
   publishTask,
+  finishTask,
+  ensureTask,
+  modifyTask,
 } from "@/api/task/index.js";
 import { projectMy, projectMembers } from "@/api/project/index.js";
 import { useRoute } from "vue-router";
@@ -14,12 +17,17 @@ import { convertTimestamp, formatTime } from "@/utils/timeConverter.js";
 import {
   taskStatusContant,
   taskStatusMap,
+  projectStatusMap,
+  projectStatusContant,
 } from "@/constants/statusConstants.js";
 
 // 用户id
 const route = useRoute();
 const temp = route.query.loginId;
 const loginId = BigInt(temp);
+console.log(loginId);
+
+const showColumn = ref(false);
 
 // 项目id数据模型
 const options = ref([]);
@@ -48,7 +56,7 @@ onMounted(() => {
   getTaskMy();
 });
 
-// 提交对话框
+// ------------------------------ 提交任务
 const centerDialogVisible = ref(false);
 // 任务列表数据模型
 const tableData = ref([]);
@@ -57,14 +65,16 @@ const taskData = ref({
   id: null,
   result: "",
 });
-const showSubmitButton = (status, id) => {
-  // “未处理” 状态才能提交
+const showSubmitButton = (projecStatus, status) => {
+  // 仅对应项目状态为“已立项”可以提交 仅状态为“草稿”的任务可以提交
   return (
-    status === taskStatusContant.STATUS_UNPROCESSED && BigInt(id) === loginId
+    projecStatus === projectStatusContant.STATUS_LAUNCHED &&
+    status === taskStatusContant.STATUS_DRAFT &&
+    showColumn.value
   );
 };
 // 提交对话框
-const submitDialog = (id) => {
+const taskSubmitDialog = (id) => {
   taskData.value.id = BigInt(id); // 任务id
   centerDialogVisible.value = true;
 };
@@ -102,17 +112,34 @@ const getTask = async () => {
   getAllTask(formTask.value)
     .then((response) => {
       if (response.data.code === 0) {
+        showColumn.value = true;
+
+        console.log("showColumn", showColumn.value);
         tableData.value = response.data.data.map((item) => ({
           ...item,
           id: BigInt(item.id).toString(),
           projectId: BigInt(item.projectId).toString(),
+          projecStatus: projectStatusMap[item.projecStatus],
           executorId: BigInt(item.executorId).toString(),
-          status: taskStatusMap[item.status] || "未知状态",
+          status: taskStatusMap[item.status],
+          gmtCreate: convertTimestamp(item.gmtCreate),
+          gmtSubmit:
+            item.gmtSubmit === 0 ? "未提交" : convertTimestamp(item.gmtSubmit),
+          gmtEnsure:
+            item.gmtEnsure === 0 ? "未确认" : convertTimestamp(item.gmtEnsure),
           gmtFinish:
             item.gmtFinish === 0 ? "未完成" : convertTimestamp(item.gmtFinish),
-          gmtCreate: convertTimestamp(item.gmtCreate),
           gmtDeadline: convertTimestamp(item.gmtDeadline),
           relativeCreate: formatTime(item.gmtCreate).toString(),
+          relativeModify: formatTime(item.gmtModify).toString(),
+          relativeSubmit:
+            item.gmtSubmit === 0
+              ? "未提交"
+              : formatTime(item.gmtSubmit).toString(),
+          relativeEnsure:
+            item.gmtEnsure === 0
+              ? "未确认"
+              : formatTime(item.gmtEnsure).toString(),
           relativeFinish:
             item.gmtFinish === 0
               ? "未完成"
@@ -130,22 +157,30 @@ const getTask = async () => {
     });
 };
 
-// 所有任务列表的接口
+// 当前用户的任务列表的接口
 const getTaskMy = async () => {
   getMyTask()
     .then((response) => {
       if (response.data.code === 0) {
+        showColumn.value = false;
         tableData.value = response.data.data.map((item) => ({
           ...item,
           id: BigInt(item.id).toString(),
           projectId: BigInt(item.projectId).toString(),
-          executorId: BigInt(item.executorId).toString(),
-          status: taskStatusMap[item.status] || "未知状态",
+          projecStatus: projectStatusMap[item.projecStatus],
+          status: taskStatusMap[item.status],
+          gmtSubmit:
+            item.gmtSubmit === 0 ? "未提交" : convertTimestamp(item.gmtSubmit),
+          gmtEnsure:
+            item.gmtEnsure === 0 ? "未确认" : convertTimestamp(item.gmtEnsure),
           gmtFinish:
             item.gmtFinish === 0 ? "未完成" : convertTimestamp(item.gmtFinish),
-          gmtCreate: convertTimestamp(item.gmtCreate),
           gmtDeadline: convertTimestamp(item.gmtDeadline),
-          relativeCreate: formatTime(item.gmtCreate).toString(),
+          relativeSubmit: formatTime(item.gmtSubmit).toString(),
+          relativeEnsure:
+            item.gmtEnsure === 0
+              ? "未确认"
+              : formatTime(item.gmtEnsure).toString(),
           relativeFinish:
             item.gmtFinish === 0
               ? "未完成"
@@ -163,7 +198,7 @@ const getTaskMy = async () => {
     });
 };
 
-// 删除对话框
+// ------------------------ 删除任务
 const centerDialogVisible2 = ref(false);
 
 const formDelete = ref({
@@ -173,11 +208,9 @@ function taskDeleteDialog(id) {
   formDelete.value.id = BigInt(id);
   centerDialogVisible2.value = true;
 }
-const showDeleteButton = (status, id) => {
-  // “未处理” 状态才能提交
-  return (
-    status === taskStatusContant.STATUS_UNPROCESSED && BigInt(id) === loginId
-  );
+const showDeleteButton = (status) => {
+  // “草稿” 状态才能提交
+  return status === taskStatusContant.STATUS_DRAFT && showColumn.value;
 };
 // 删除任务的接口
 const deleteContent = async () => {
@@ -259,7 +292,6 @@ const taskPublish = async () => {
     return;
   }
   // 转换为时间戳
-  console.log("111", timestamp.value.time, timestamp.value.time.getTime());
   publishData.value.gmt_deadline = BigInt(timestamp.value.time.getTime());
   publishTask(publishData.value)
     .then((response) => {
@@ -281,6 +313,112 @@ const taskPublish = async () => {
       publishData.value.gmt_deadline = null;
     });
 };
+
+// ------------------------- 修改任务
+const showModifyButton = (status) => {
+  return status === taskStatusContant.STATUS_DRAFT && showColumn.value;
+};
+const centerDialogVisibleModify = ref(false);
+const formModify = ref({
+  id: null,
+  executor_id: null,
+  content: "",
+  gmt_deadline: null,
+});
+function taskModifyDialog(id, executor_id) {
+  formModify.value.id = BigInt(id);
+  formModify.value.executor_id = BigInt(executor_id);
+  centerDialogVisibleModify.value = true;
+}
+const taskModify = async () => {
+  if (!formModify.value.content || !formModify.value.gmt_deadline) {
+    alert("请输入完整内容");
+    return;
+  }
+  modifyTask()
+    .then((response) => {
+      if (response.data.code === 0) {
+        getTask(); // 加载任务
+      } else {
+        alert(response.data.msg || "修改失败");
+      }
+    })
+    .catch((error) => {
+      alert("修改错误");
+      console.log("修改错误", error);
+    })
+    .finally(() => {
+      centerDialogVisibleModify.value = false;
+      formModify.value.content = "";
+      formModify.value.gmt_deadline = null;
+    });
+};
+
+// ------------------------- 确认任务
+const showEnsureButton = (status) => {
+  return status === taskStatusContant.STATUS_SUBMIT && !showColumn.value;
+};
+const centerDialogVisibleEnsure = ref(false);
+const formEnsure = ref({
+  id: null,
+});
+function taskEnsureDialog(id) {
+  formEnsure.value.id = BigInt(id);
+  centerDialogVisibleEnsure.value = true;
+}
+const taskEnsure = async () => {
+  ensureTask()
+    .then((response) => {
+      if (response.data.code === 0) {
+        getTaskMy();
+      } else {
+        alert(response.data.msg || "确认失败");
+      }
+    })
+    .catch((error) => {
+      alert("确认错误");
+      console.log("确认错误", error);
+    })
+    .finally(() => {
+      centerDialogVisibleEnsure.value = false;
+    });
+};
+
+// ------------------------- 完成任务
+const showFinishButton = (status) => {
+  return (
+    (status === taskStatusContant.STATUS_SUBMIT ||
+      status === taskStatusContant.STATUS_AGREE) &&
+    !showColumn.value
+  );
+};
+const centerDialogVisibleFinish = ref(false);
+const formFinish = ref({
+  id: null,
+  content: "",
+});
+function taskFinishDialog(id) {
+  formFinish.value.id = BigInt(id);
+  centerDialogVisibleFinish.value = true;
+}
+const taskFinish = async () => {
+  finishTask()
+    .then((response) => {
+      if (response.data.code === 0) {
+        getTaskMy();
+      } else {
+        alert(response.data.msg || "提交失败");
+      }
+    })
+    .catch((error) => {
+      alert("提交错误");
+      console.log("提交错误", error);
+    })
+    .finally(() => {
+      centerDialogVisibleFinish.value = false;
+      formFinish.value.content = "";
+    });
+};
 </script>
 
 <template>
@@ -290,7 +428,7 @@ const taskPublish = async () => {
       <div class="container-task-select">
         <el-select
           v-model="selectValue"
-          placeholder="请选择项目"
+          placeholder="请选择项目中我发布的任务"
           size="large"
           style="width: 260px; margin-left: 30px; margin-right: 30px"
         >
@@ -318,6 +456,7 @@ const taskPublish = async () => {
       <div class="table">
         <el-table :data="tableData">
           <el-table-column
+            v-if="showColumn"
             fixed
             label="任务执行人"
             min-width="100"
@@ -336,11 +475,35 @@ const taskPublish = async () => {
                   <div>邮箱: {{ scope.row.executorEmail }}</div>
                 </template>
                 <template #reference>
-                  <el-tag effect="plain" type="success">{{
-                    scope.row.executorName
-                  }}</el-tag>
+                  <!-- <el-tag effect="plain" type="success"> -->
+                  {{ scope.row.executorName }}
+                  <!-- </el-tag> -->
                 </template>
               </el-popover>
+            </template>
+          </el-table-column>
+          <el-table-column
+            label="项目状态"
+            min-width="100"
+            max-width="180"
+            show-overflow-tooltip
+          >
+            <template #default="scope">
+              <!-- <el-popover
+                effect="light"
+                trigger="hover"
+                placement="top"
+                width="auto"
+              > -->
+              <!-- <template #default> -->
+              <!-- <div>状态: {{ scope.row.projecStatus }}</div> -->
+              <!-- </template> -->
+              <!-- <template #reference> -->
+              <el-tag effect="plain" type="success">
+                {{ scope.row.projecStatus }}
+              </el-tag>
+              <!-- </template> -->
+              <!-- </el-popover> -->
             </template>
           </el-table-column>
           <el-table-column
@@ -350,7 +513,12 @@ const taskPublish = async () => {
             max-width="220"
             show-overflow-tooltip
           />
-          <el-table-column prop="status" label="任务状态" min-width="120" max-width="180">
+          <el-table-column
+            prop="status"
+            label="任务状态"
+            min-width="120"
+            max-width="180"
+          >
             <template #default="scope">
               <el-popover
                 effect="light"
@@ -369,8 +537,9 @@ const taskPublish = async () => {
             </template>
           </el-table-column>
           <el-table-column
+            v-if="showColumn"
             label="任务创建时间"
-            min-width="160"
+            min-width="150"
             max-width="230"
             show-overflow-tooltip
           >
@@ -391,8 +560,75 @@ const taskPublish = async () => {
             </template>
           </el-table-column>
           <el-table-column
+            v-if="showColumn"
+            label="任务修改时间"
+            min-width="150"
+            max-width="230"
+            show-overflow-tooltip
+          >
+            <template #default="scope">
+              <el-popover
+                effect="light"
+                trigger="hover"
+                placement="top"
+                width="auto"
+              >
+                <template #default>
+                  <div>修改时间: {{ scope.row.gmtModify }}</div>
+                </template>
+                <template #reference>
+                  {{ scope.row.relativeModify }}
+                </template>
+              </el-popover>
+            </template>
+          </el-table-column>
+          <el-table-column
+            label="任务提交时间"
+            min-width="150"
+            max-width="230"
+            show-overflow-tooltip
+          >
+            <template #default="scope">
+              <el-popover
+                effect="light"
+                trigger="hover"
+                placement="top"
+                width="auto"
+              >
+                <template #default>
+                  <div>提交时间: {{ scope.row.gmtSubmit }}</div>
+                </template>
+                <template #reference>
+                  {{ scope.row.relativeSubmit }}
+                </template>
+              </el-popover>
+            </template>
+          </el-table-column>
+          <el-table-column
+            label="任务确认时间"
+            min-width="150"
+            max-width="230"
+            show-overflow-tooltip
+          >
+            <template #default="scope">
+              <el-popover
+                effect="light"
+                trigger="hover"
+                placement="top"
+                width="auto"
+              >
+                <template #default>
+                  <div>确认时间: {{ scope.row.gmtEnsure }}</div>
+                </template>
+                <template #reference>
+                  {{ scope.row.relativeEnsure }}
+                </template>
+              </el-popover>
+            </template>
+          </el-table-column>
+          <el-table-column
             label="任务完成时间"
-            min-width="160"
+            min-width="150"
             max-width="230"
             show-overflow-tooltip
           >
@@ -414,7 +650,7 @@ const taskPublish = async () => {
           </el-table-column>
           <el-table-column
             label="任务截止时间"
-            min-width="160"
+            min-width="150"
             max-width="230"
             show-overflow-tooltip
           >
@@ -453,132 +689,217 @@ const taskPublish = async () => {
                 type="primary"
                 size="small"
                 style="margin-right: 0"
-                v-if="showSubmitButton(scope.row.status, scope.row.executorId)"
-                @click="submitDialog(scope.row.id)"
+                v-if="
+                  showSubmitButton(scope.row.projecStatus, scope.row.status)
+                "
+                @click="taskSubmitDialog(scope.row.id)"
               >
                 提交
               </el-button>
               <el-button
                 link
+                type="primary"
+                size="small"
+                style="margin-right: 0"
+                v-if="showModifyButton(scope.row.projecStatus)"
+                @click="taskModifyDialog(scope.row.id, scope.row.executor_id)"
+              >
+                修改
+              </el-button>
+              <el-button
+                link
                 type="danger"
                 size="small"
-                @click="taskDeleteDialog(scope.row.id)"
                 style="margin-right: 0"
-                v-if="showDeleteButton(scope.row.status, scope.row.executorId)"
+                @click="taskDeleteDialog(scope.row.id)"
+                v-if="showDeleteButton(scope.row.projecStatus)"
                 >删除</el-button
               >
+              <el-button
+                link
+                type="primary"
+                size="small"
+                style="margin-right: 0"
+                v-if="showEnsureButton(scope.row.status, scope.row.executorId)"
+                @click="taskEnsureDialog(scope.row.id)"
+              >
+                确认
+              </el-button>
+              <el-button
+                link
+                type="primary"
+                size="small"
+                style="margin-right: 0"
+                v-if="showFinishButton(scope.row.status, scope.row.executorId)"
+                @click="taskFinishDialog(scope.row.id)"
+              >
+                完成
+              </el-button>
             </template>
           </el-table-column>
         </el-table>
       </div>
-
-      <!-- 提交任务 -->
-      <el-dialog
-        v-model="centerDialogVisible"
-        title="任务结果"
-        width="500"
-        center
-      >
-        <el-form-item label="">
-          <el-input
-            v-model="taskData.result"
-            type="textarea"
-            placeholder="请输入任务结果"
-          />
-        </el-form-item>
-        <template #footer>
-          <div class="dialog-footer">
-            <el-button @click="centerDialogVisible = false">取消</el-button>
-            <el-button type="primary" @click="submitContent"> 确认 </el-button>
-          </div>
-        </template>
-      </el-dialog>
-
-      <!-- 删除任务 -->
-      <el-dialog
-        v-model="centerDialogVisible2"
-        title="任务结果"
-        width="500"
-        center
-      >
-        <span>确认删除任务？</span>
-        <template #footer>
-          <div class="dialog-footer">
-            <el-button @click="centerDialogVisible2 = false">取消</el-button>
-            <el-button type="primary" @click="deleteContent"> 确认 </el-button>
-          </div>
-        </template>
-      </el-dialog>
-
-      <!-- 发布任务 -->
-      <el-dialog
-        v-model="centerDialogVisiblePublish"
-        title="发布任务"
-        width="600"
-        center
-      >
-        <div style="display: flex; flex-direction: column; align-items: center">
-          <div style="margin-bottom: 20px">
-            <label for="" style="margin-right: 15px">项目标题</label>
-            <el-select
-              v-model="publishData.id"
-              placeholder="请选择项目id"
-              style="width: 240px"
-            >
-              <el-option
-                v-for="item in options"
-                :key="item"
-                :label="item.title"
-                :value="item.id"
-              />
-            </el-select>
-          </div>
-          <div style="margin-bottom: 20px">
-            <el-button
-              style="margin-right: 15px; padding: 0"
-              @click="getProjectAndMember"
-              >获取成员</el-button
-            >
-            <el-select
-              v-model="publishData.executor_id"
-              placeholder="请选择成员id"
-              style="width: 240px"
-            >
-              <el-option
-                v-for="item in optionsMember"
-                :key="item.id"
-                :label="item.email"
-                :value="item.id"
-              />
-            </el-select>
-          </div>
-          <el-form-item label="项目内容">
-            <el-input
-              v-model="publishData.content"
-              type="textarea"
-              style="width: 240px"
-            />
-          </el-form-item>
-          <div>
-            <label for="" style="margin-right: 15px">截止时间</label>
-            <el-date-picker
-              v-model="timestamp.time"
-              type="datetime"
-              placeholder="选择日期和时间"
-            />
-          </div>
-        </div>
-        <template #footer>
-          <div class="dialog-footer">
-            <el-button @click="centerDialogVisiblePublish = false"
-              >取消</el-button
-            >
-            <el-button type="primary" @click="taskPublish"> 确定 </el-button>
-          </div>
-        </template>
-      </el-dialog>
     </div>
   </div>
+  <!-- 提交任务 -->
+  <el-dialog v-model="centerDialogVisible" title="提交任务" width="500" center>
+    <span>确认提交该任务？</span>
+    <template #footer>
+      <div class="dialog-footer">
+        <el-button @click="centerDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="submitContent"> 确认 </el-button>
+      </div>
+    </template>
+  </el-dialog>
+
+  <!-- 修改任务 -->
+  <el-dialog
+    v-model="centerDialogVisibleModify"
+    title="修改任务"
+    width="600"
+    center
+  >
+    <div style="display: flex; flex-direction: column; align-items: center">
+      <el-form-item label="任务内容">
+        <el-input
+          v-model="formModify.content"
+          type="textarea"
+          style="width: 240px"
+        />
+      </el-form-item>
+      <div>
+        <label for="" style="margin-right: 15px">截止时间</label>
+        <el-date-picker
+          v-model="timestamp.time"
+          type="datetime"
+          placeholder="选择日期和时间"
+        />
+      </div>
+    </div>
+    <template #footer>
+      <div class="dialog-footer">
+        <el-button @click="centerDialogVisibleModify = false">取消</el-button>
+        <el-button type="primary" @click="taskModify">确认</el-button>
+      </div>
+    </template>
+  </el-dialog>
+
+  <!-- 删除任务 -->
+  <el-dialog v-model="centerDialogVisible2" title="任务结果" width="500" center>
+    <span>确认删除任务？</span>
+    <template #footer>
+      <div class="dialog-footer">
+        <el-button @click="centerDialogVisible2 = false">取消</el-button>
+        <el-button type="primary" @click="deleteContent"> 确认 </el-button>
+      </div>
+    </template>
+  </el-dialog>
+
+  <!-- 确认任务 -->
+  <el-dialog
+    v-model="centerDialogVisibleEnsure"
+    title="确认任务"
+    width="500"
+    center
+  >
+    <span>是否对该任务进行确认？</span>
+    <template #footer>
+      <div class="dialog-footer">
+        <el-button @click="centerDialogVisibleEnsure = false">取消</el-button>
+        <el-button type="primary" @click="taskEnsure">确认</el-button>
+      </div>
+    </template>
+  </el-dialog>
+
+  <!-- 完成任务 -->
+  <el-dialog
+    v-model="centerDialogVisibleFinish"
+    title="完成任务"
+    width="600"
+    center
+  >
+    <div style="display: flex; align-items: center; justify-content: center">
+      <el-form-item label="任务内容">
+        <el-input
+          v-model="formFinish.content"
+          type="textarea"
+          style="width: 400px"
+        />
+      </el-form-item>
+    </div>
+    <template #footer>
+      <div class="dialog-footer">
+        <el-button @click="centerDialogVisibleFinish = false">取消</el-button>
+        <el-button type="primary" @click="taskFinish">确认</el-button>
+      </div>
+    </template>
+  </el-dialog>
+
+  <!-- 发布任务 -->
+  <el-dialog
+    v-model="centerDialogVisiblePublish"
+    title="发布任务"
+    width="600"
+    center
+  >
+    <div style="display: flex; flex-direction: column; align-items: center">
+      <div style="margin-bottom: 20px">
+        <label for="" style="margin-right: 15px">项目标题</label>
+        <el-select
+          v-model="publishData.id"
+          placeholder="请选择项目id"
+          style="width: 240px"
+        >
+          <el-option
+            v-for="item in options"
+            :key="item"
+            :label="item.title"
+            :value="item.id"
+          />
+        </el-select>
+      </div>
+      <div style="margin-bottom: 20px">
+        <el-button
+          style="margin-right: 15px; padding: 0"
+          @click="getProjectAndMember"
+          >获取成员</el-button
+        >
+        <el-select
+          v-model="publishData.executor_id"
+          placeholder="请选择成员id"
+          style="width: 240px"
+        >
+          <el-option
+            v-for="item in optionsMember"
+            :key="item.id"
+            :label="item.email"
+            :value="item.id"
+          />
+        </el-select>
+      </div>
+      <el-form-item label="项目内容">
+        <el-input
+          v-model="publishData.content"
+          type="textarea"
+          style="width: 240px"
+        />
+      </el-form-item>
+      <div>
+        <label for="" style="margin-right: 15px">截止时间</label>
+        <el-date-picker
+          v-model="timestamp.time"
+          type="datetime"
+          placeholder="选择日期和时间"
+        />
+      </div>
+    </div>
+    <template #footer>
+      <div class="dialog-footer">
+        <el-button @click="centerDialogVisiblePublish = false">取消</el-button>
+        <el-button type="primary" @click="taskPublish"> 确定 </el-button>
+      </div>
+    </template>
+  </el-dialog>
 </template>
 
 <style scoped>
@@ -640,10 +961,6 @@ const taskPublish = async () => {
 
 .container-button {
   margin-top: 30px;
-}
-
-.el-button {
-  margin-right: 100px;
 }
 
 .table {

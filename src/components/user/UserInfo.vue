@@ -8,6 +8,9 @@ const id = ref(null);
 const email = ref("");
 const name = ref("");
 const phone = ref("");
+const qq = ref("");
+const wechat = ref("");
+const institution = ref("");
 
 // 从后端获取数据的函数
 const fetchUserData = async () => {
@@ -103,6 +106,18 @@ const updateInfo = async () => {
       <label for="" class="container-card-label">手机号</label>
       <el-input v-model="phone" style="width: 80%" disabled />
     </div>
+    <div class="container-card">
+      <label for="" class="container-card-label">QQ号</label>
+      <el-input v-model="qq" style="width: 80%" disabled />
+    </div>
+    <div class="container-card">
+      <label for="" class="container-card-label">微信号</label>
+      <el-input v-model="wechat" style="width: 80%" disabled />
+    </div>
+    <div class="container-card">
+      <label for="" class="container-card-label">所属机构</label>
+      <el-input v-model="institution" style="width: 80%" disabled />
+    </div>
     <div class="container-button">
       <el-button type="primary" :icon="Edit" circle @click="toggleEdit" />
     </div>
@@ -144,7 +159,7 @@ const updateInfo = async () => {
 <style scoped>
 .container {
   background-color: #ffffff;
-  height: 93vh;
+  /* height: 93vh; */
   display: flex;
   flex-direction: column;
   align-items: center;

@@ -59,8 +59,7 @@ const searchApproved = async () => {
           id: BigInt(item.id).toString(),
           projectId: BigInt(item.projectId).toString(),
           submitterId: BigInt(item.submitterId).toString(),
-          status: achieveStatusMap[item.status] || "未知状态",
-          type: map[item.type] || "其他",
+          status: achieveStatusMap[item.status],
           gmtCreate: convertTimestamp(item.gmtCreate).toString(),
           gmtModify:
             item.gmtModify === 0
@@ -270,9 +269,6 @@ const searchApproved = async () => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  /* justify-content: center; */
-  /* height: 100px; */
-  /* border-bottom: 2px solid #f8f8f8; */
   margin-bottom: 5px;
 }
 
