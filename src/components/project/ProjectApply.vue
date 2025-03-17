@@ -333,13 +333,12 @@ const getMemberProject = async () => {
     >
       <div>
         <el-table :data="memberData" stripe style="width: 100%">
-          <el-table-column fixed prop="id" label="用户id" width="150" />
-          <el-table-column prop="email" label="用户邮箱" min-width="120" max-width="200" />
-          <el-table-column prop="name" label="用户名" width="100" />
-          <el-table-column prop="phone" label="用户手机号" min-width="100" max-width="200"/>
-          <!-- <el-table-column fixed="right" label="操作" width="100">
-            <template #default> </template>
-          </el-table-column> -->
+          <el-table-column prop="email" label="用户邮箱" min-width="160" max-width="250" />
+          <el-table-column prop="name" label="用户名" min-width="100" max-width="300"/>
+          <el-table-column prop="phone" label="用手机号" min-width="150" max-width="300"/>
+          <el-table-column prop="phone" label="QQ号" min-width="140" max-width="250"/>
+          <el-table-column prop="phone" label="微信号" min-width="140" max-width="250"/>
+          <el-table-column prop="institution" label="所属机构" min-width="100" max-width="160"/>
         </el-table>
       </div>
       <template #footer>

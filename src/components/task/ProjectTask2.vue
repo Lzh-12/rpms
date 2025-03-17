@@ -11,7 +11,7 @@ import {
   ensureTask,
   modifyTask,
 } from "@/api/task/index.js";
-import { projectMy, projectMembers } from "@/api/project/index.js";
+import { projectMyCreate, projectMembers } from "@/api/project/index.js";
 import { useRoute } from "vue-router";
 import { convertTimestamp, formatTime } from "@/utils/timeConverter.js";
 import {
@@ -31,9 +31,9 @@ const showColumn = ref(false);
 
 // 项目id数据模型
 const options = ref([]);
-// 项目列表
+// 创建的项目列表
 const fetchOptions = async () => {
-  projectMy()
+  projectMyCreate()
     .then((response) => {
       if (response.data.code === 0) {
         // 获取所有项目的id

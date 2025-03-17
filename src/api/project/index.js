@@ -45,9 +45,19 @@ export const projectApply = (ProjectData) => {
     return sendRequest("post", `/project/`, params);
 }
 
-// 获取我的项目列表
+// 获取我参与的项目列表
 export const projectMy = () => {
-    return sendRequest("get", '/project/my');
+    return sendRequest("get", '/project/participation');
+}
+
+// 获取我创建的项目列表
+export const projectMyCreate = () => {
+    return sendRequest("get", '/project/creation');
+}
+
+// 获取已通过的项目列表
+export const projectApproved = () => {
+    return sendRequest("get", '/project/approved');
 }
 
 // 修改项目

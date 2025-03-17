@@ -12,6 +12,7 @@ import {
   projectManageMember,
   projectConclude,
   projectApply,
+  projectMyCreate,
 } from "@/api/project/index.js";
 import {
   projectStatusContant,
@@ -50,6 +51,7 @@ const fetchProjects = async () => {
     .then((response) => {
       console.log(response);
       if (response.data.code === 0) {
+        showMode.value = false;
         table.value = response.data.data.map((item) => ({
           ...item,
           id: BigInt(item.id),
@@ -95,6 +97,54 @@ const fetchProjects = async () => {
 onMounted(() => {
   fetchProjects();
 });
+
+const showMode = ref(false);
+// ---------------------- 获取创建的项目列表
+const createProjects = async () => {
+  projectMyCreate()
+    .then((response) => {
+      if (response.data.code === 0) {
+        showMode.value = true;
+        table.value = response.data.data.map((item) => ({
+          ...item,
+          id: BigInt(item.id),
+          status: projectStatusMap[item.status] || "未知状态",
+          gmtModify:
+            item.gmtModify === 0
+              ? "未修改"
+              : convertTimestamp(item.gmtModify).toString(),
+          gmtCreate: convertTimestamp(item.gmtCreate).toString(),
+          gmtReview:
+            item.gmtReview === 0
+              ? "未审核"
+              : convertTimestamp(item.gmtReview).toString(),
+          gmtConclude:
+            item.gmtConclude === 0
+              ? "未结项"
+              : convertTimestamp(item.gmtConclude).toString(),
+          relativeModify:
+            item.gmtModify === 0
+              ? "未修改"
+              : formatTime(item.gmtModify).toString(),
+          relativeCreate: formatTime(item.gmtCreate).toString(),
+          relativeReview:
+            item.gmtReview === 0
+              ? "未审核"
+              : formatTime(item.gmtReview).toString(),
+          relativeConclude:
+            item.gmtConclude === 0
+              ? "未结题"
+              : formatTime(item.gmtConclude).toString(),
+        }));
+        tableData.value = table.value;
+      } else {
+        alert(response.data.msg || "加载失败");
+      }
+    })
+    .catch((error) => {
+      console.error("获取项目数据失败:", error);
+    });
+};
 
 // ------------------- 新增项目
 const centerDialogVisibleAdd = ref(false);
@@ -170,22 +220,22 @@ function getDetail(number) {
 
 // 修改
 const showUpdateButton = (status) => {
-  // 项目处于"预处理"或"被驳回"才可以进行修改
+  // 项目处于"草稿"或"被驳回"才可以进行修改
   return (
-    status === projectStatusContant.STATUS_PENDING ||
+    status === projectStatusContant.STATUS_DRAFT ||
     status === projectStatusContant.STATUS_REJECTED
   );
 };
 // 删除
 const showDeleteButton = (status) => {
-  // 项目处于"预处理"才可以进行删除
-  return status === projectStatusContant.STATUS_PENDING;
+  // 项目处于"草稿才可以进行删除
+  return status === projectStatusContant.STATUS_DRAFT;
 };
 // 提交
 const showsubmitButton = (status) => {
   // 项目处于"预处理"或"被驳回"才可以进行提交
   return (
-    status === projectStatusContant.STATUS_PENDING ||
+    status === projectStatusContant.STATUS_DRAFT ||
     status === projectStatusContant.STATUS_REJECTED
   );
 };
@@ -246,15 +296,17 @@ const formDelete = ref({
   id: null,
 });
 const deleteDialog = (id) => {
-  formDelete.value.id = id; // 项目id
+  formDelete.value.id = BigInt(id); // 项目id
   centerDialogVisibleDelete.value = true;
 };
 // 删除项目接口
 const deleteProject = async () => {
+
+  console.log(formDelete.value)
   projectDelete(formDelete.value)
     .then((response) => {
       if (response.data.code === 0) {
-        fetchProjects();
+        createProjects();
         alert(response.data.msg || "删除成功");
       } else {
         alert(response.data.msg || "删除失败");
@@ -467,7 +519,7 @@ const showDelete = (id) => {
       <el-button type="primary" :icon="Search" @click="searchProjects"
         >查询</el-button
       >
-      <el-button @click="fetchProjects">我的创建</el-button>
+      <el-button @click="createProjects">我的创建</el-button>
       <el-button @click="fetchProjects">我的参与</el-button>
     </div>
 
@@ -494,6 +546,7 @@ const showDelete = (id) => {
             show-overflow-tooltip
           />
           <el-table-column
+            v-if="showMode.value"
             prop="leaderName"
             label="负责人"
             min-width="100"
@@ -512,9 +565,40 @@ const showDelete = (id) => {
                   <div>邮箱: {{ scope.row.leaderEmail }}</div>
                 </template>
                 <template #reference>
-                  <el-tag effect="plain" type="success">{{
+                  <!-- <el-tag effect="plain" type="success"> -->
+                    {{
                     scope.row.leaderName
-                  }}</el-tag>
+                  }}
+                  <!-- </el-tag> -->
+                </template>
+              </el-popover>
+            </template>
+          </el-table-column>
+          <el-table-column
+            v-if="!showMode.value"
+            prop="reviewerName"
+            label="审核人"
+            min-width="100"
+            max-width="160"
+            show-overflow-tooltip
+          >
+            <template #default="scope">
+              <el-popover
+                effect="light"
+                trigger="hover"
+                placement="top"
+                width="auto"
+              >
+                <template #default>
+                  <div>用户名: {{ scope.row.reviewerName }}</div>
+                  <div>邮箱: {{ scope.row.reviewerEmail }}</div>
+                </template>
+                <template #reference>
+                  <!-- <el-tag effect="plain" type="success"> -->
+                    {{
+                    scope.row.reviewerName || "无"
+                  }}
+                  <!-- </el-tag> -->
                 </template>
               </el-popover>
             </template>
@@ -720,6 +804,7 @@ const showDelete = (id) => {
               width="100%"
               placeholder="项目简述"
               clearable
+              type="number"
             />
           </div>
         </div>
