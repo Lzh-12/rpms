@@ -959,7 +959,7 @@ const showDelete = (id) => {
     <el-dialog
       v-model="centerDialogVisibleMember"
       title="项目成员"
-      min-width="800"
+      min-width="850"
       max-width="1100"
       align-center
     >
@@ -970,13 +970,13 @@ const showDelete = (id) => {
             fixed
             prop="email"
             label="用户邮箱"
-            min-width="170"
-            max-width="200"
+            min-width="150"
+            max-width="240"
           />
           <el-table-column
             prop="name"
             label="用户名"
-            min-width="120"
+            min-width="100"
             max-width="200"
           />
           <el-table-column
@@ -988,20 +988,20 @@ const showDelete = (id) => {
           <el-table-column
             prop="qq"
             label="QQ"
-            min-width="120"
+            min-width="100"
             max-width="180"
           />
           <el-table-column
             prop="qq"
             label="微信号"
-            min-width="120"
+            min-width="100"
             max-width="180"
           />
           <el-table-column
             prop="institution"
             label="所属机构"
             min-width="100"
-            max-width="160"
+            max-width="170"
           />
           <el-table-column fixed="right" label="操作" width="100">
             <template #default="scope">

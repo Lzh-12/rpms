@@ -74,6 +74,7 @@ const fetchProjects = async () => {
   projectApproved()
     .then((response) => {
       if (response.data.code === 0) {
+        showMode.value = true;
         table.value = response.data.data.map((item) => ({
           ...item,
           id: BigInt(item.id).toString(),
@@ -117,19 +118,15 @@ const getUnapprovedProjects = async () => {
   projectUnapproved()
     .then((response) => {
       if (response.data.code === 0) {
+        showMode.value = false;
         table.value = response.data.data.map((item) => ({
           ...item,
           id: BigInt(item.id).toString(),
           leaderId: BigInt(item.leaderId).toString(),
           reviewerId: BigInt(item.reviewerId).toString(),
-          budget: BigInt(item.budget).toString(),
           status: projectStatusMap[item.status],
           gmtSubmit: convertTimestamp(item.gmtSubmit),
           gmtReview: item.gmtReview === 0 ? "未审核" : convertTimestamp(item.gmtReview),
-          taskNum: BigInt(item.taskNum).toString(),
-          memberNum: BigInt(item.memberNum).toString(),
-          achieveNum: BigInt(item.achieveNum).toString(),
-          fundNum: BigInt(item.fundNum).toString(),
           relativeSubmit: formatTime(item.gmtReview), 
           relativeReview: item.gmtReview === 0 ? "未审核" : formatTime(item.gmtReview).toString(),
         }));
@@ -335,6 +332,7 @@ watch(selectedOption, () => {
             </template>
           </el-table-column>
           <el-table-column
+            v-if="showMode.value"
             prop="budget"
             label="项目预算"
             min-width="100"
@@ -393,7 +391,7 @@ watch(selectedOption, () => {
             max-width="220"
             show-overflow-tooltip
           />
-          <el-table-column prop="gmtConclude" label="结项时间" width="160">
+          <el-table-column prop="gmtConclude" label="结项时间" min-width="150" max-width="250" v-if="showMode.value">
             <template #default="scope">
               <el-popover
                 effect="light"
@@ -413,7 +411,7 @@ watch(selectedOption, () => {
             </template>
           </el-table-column>
           <el-table-column
-            v-if="showMode"
+            v-if="showMode.value"
             prop="taskNum"
             label="任务数"
             min-width="100"
@@ -421,7 +419,7 @@ watch(selectedOption, () => {
             show-overflow-tooltip
           />
           <el-table-column
-            v-if="showMode"
+            v-if="showMode.value"
             prop="memberNum"
             label="成员数"
             min-width="100"
@@ -429,7 +427,7 @@ watch(selectedOption, () => {
             show-overflow-tooltip
           />
           <el-table-column
-            v-if="showMode"
+            v-if="showMode.value"
             prop="achieveNum"
             label="成果数"
             min-width="100"
@@ -437,7 +435,7 @@ watch(selectedOption, () => {
             show-overflow-tooltip
           />
           <el-table-column
-            v-if="showMode"
+            v-if="showMode.value"
             prop="fundNum"
             label="总花费"
             min-width="100"
@@ -491,7 +489,8 @@ watch(selectedOption, () => {
     <el-dialog
       v-model="centerDialogVisibleMember"
       title="项目成员"
-      width="800"
+      min-width="850"
+      max-width="1200"
       align-center
     >
       <div>
@@ -500,7 +499,7 @@ watch(selectedOption, () => {
             prop="email"
             label="用户邮箱"
             min-width="120"
-            max-width="200"
+            max-width="240"
             show-overflow-tooltip
           />
           <el-table-column
@@ -520,13 +519,13 @@ watch(selectedOption, () => {
           <el-table-column
             prop="qq"
             label="QQ"
-            min-width="120"
+            min-width="100"
             max-width="180"
           />
           <el-table-column
             prop="qq"
             label="微信号"
-            min-width="120"
+            min-width="100"
             max-width="180"
           />
           <el-table-column

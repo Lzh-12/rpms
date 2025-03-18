@@ -167,14 +167,18 @@ const getMemberProject = async () => {
           <el-table-column
             fixed
             prop="title"
-            label="项目标题"
+            label="标题"
             class-name="title"
+            min-width="100"
+            max-width="170"
             show-overflow-tooltip
           />
           <el-table-column
             prop="leaderName"
-            label="项目负责人"
+            label="负责人"
             class-name="status"
+            min-width="100"
+            max-width="160"
             show-overflow-tooltip
           >
             <template #default="scope">
@@ -196,7 +200,8 @@ const getMemberProject = async () => {
               </el-popover>
             </template>
           </el-table-column>
-          <el-table-column prop="status" label="项目状态" class-name="status">
+          <el-table-column prop="status" label="状态" class-name="status" min-width="90"
+            max-width="160">
             <template #default="scope">
               <el-popover
                 effect="light"
@@ -215,8 +220,10 @@ const getMemberProject = async () => {
             </template>
           </el-table-column>
           <el-table-column
-            label="项目创建时间"
+            label="创建时间"
             class-name="time"
+            min-width="110"
+            max-width="150"
             show-overflow-tooltip
           >
             <template #default="scope">
@@ -236,8 +243,10 @@ const getMemberProject = async () => {
             </template>
           </el-table-column>
           <el-table-column
-            label="项目修改时间"
+            label="修改时间"
             class-name="time"
+            min-width="110"
+            max-width="160"
             show-overflow-tooltip
           >
             <template #default="scope">
@@ -257,8 +266,10 @@ const getMemberProject = async () => {
             </template>
           </el-table-column>
           <el-table-column
-            label="项目审核时间"
+            label="审核时间"
             class-name="time"
+            min-width="110"
+            max-width="160"
             show-overflow-tooltip
           >
             <template #default="scope">
@@ -278,8 +289,10 @@ const getMemberProject = async () => {
             </template>
           </el-table-column>
           <el-table-column
-            label="项目结项时间"
+            label="结项时间"
             class-name="time"
+            min-width="110"
+            max-width="160"
             show-overflow-tooltip
           >
             <template #default="scope">
@@ -300,8 +313,10 @@ const getMemberProject = async () => {
           </el-table-column>
           <el-table-column
             fixed="right"
-            label="Operations"
+            label="操作"
             class-name="operation"
+            min-width="100"
+            max-width="220"
           >
             <template #default="scope">
               <el-button
