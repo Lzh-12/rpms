@@ -2,7 +2,6 @@
 import { ref, onMounted, watch, watchEffect } from "vue";
 import { Search } from "@element-plus/icons-vue";
 import router from "@/router";
-import { useRoute } from "vue-router";
 import {
   projectMy,
   projectModify,
@@ -13,12 +12,15 @@ import {
   projectConclude,
   projectApply,
   projectMyCreate,
+  getProjectDetails,
 } from "@/api/project/index.js";
 import {
   projectStatusContant,
   projectStatusMap,
 } from "@/constants/statusConstants.js";
 import { convertTimestamp, formatTime } from "@/utils/timeConverter.js";
+import { ElMessage } from "element-plus";
+import { tableRowClassName } from "@/utils/tableUtils.js";
 
 // 项目标题
 const projectTitle = ref("");
@@ -28,7 +30,8 @@ const tableData = ref([]);
 // 查询项目
 const searchProjects = () => {
   if (!projectTitle.value) {
-    alert("请选择项目");
+    // ElMessage.error("请选择项目");
+    fetchProjects();
     return;
   }
   const matchedItem = table.value.find(
@@ -38,7 +41,7 @@ const searchProjects = () => {
     tableData.value = [matchedItem];
   } else {
     console.log("未找到匹配的项目");
-    alert("未找到该项目");
+    ElMessage.error("未找到该项目");
   }
   projectTitle.value = "";
 };
@@ -49,7 +52,6 @@ const table = ref([]); // 表格数据
 const fetchProjects = async () => {
   projectMy()
     .then((response) => {
-      console.log(response);
       if (response.data.code === 0) {
         showMode.value = false;
         table.value = response.data.data.map((item) => ({
@@ -85,17 +87,19 @@ const fetchProjects = async () => {
         }));
         tableData.value = table.value;
       } else {
-        alert(response.data.msg || "加载失败");
+        ElMessage.error(response.data.msg || "加载失败");
       }
     })
     .catch((error) => {
       console.error("获取项目数据失败:", error);
+      ElMessage.error("加载失败");
     });
 };
 
 // 获取项目数据
 onMounted(() => {
   fetchProjects();
+  // tableRowClassName({ row: {}, rowIndex: 0 });
 });
 
 const showMode = ref(false);
@@ -138,10 +142,11 @@ const createProjects = async () => {
         }));
         tableData.value = table.value;
       } else {
-        alert(response.data.msg || "加载失败");
+        ElMessage.error(response.data.msg || "加载失败");
       }
     })
     .catch((error) => {
+      ElMessage.error("加载错误");
       console.error("获取项目数据失败:", error);
     });
 };
@@ -151,13 +156,15 @@ const centerDialogVisibleAdd = ref(false);
 // 加载项目类型和项目领域
 const optionTypes = ref([]);
 const optionAreas = ref([]);
+optionTypes.value = JSON.parse(localStorage.getItem("projectTypes"));
+optionAreas.value = JSON.parse(localStorage.getItem("projectAreas"));
 // 监听对话框的显示状态，当对话框显示时加载数据
-watch(centerDialogVisibleAdd, (newValue) => {
-  if (newValue) {
-    optionTypes.value = JSON.parse(localStorage.getItem("projectTypes"));
-    optionAreas.value = JSON.parse(localStorage.getItem("projectAreas"));
-  }
-});
+// watch(centerDialogVisibleAdd, (newValue) => {
+//   if (newValue) {
+//     optionTypes.value = JSON.parse(localStorage.getItem("projectTypes"));
+//     optionAreas.value = JSON.parse(localStorage.getItem("projectAreas"));
+//   }
+// });
 // 申请项目的数据模型
 const ProjectData = ref({
   title: "", // 项目标题
@@ -177,20 +184,20 @@ const applyProject = async () => {
     !ProjectData.value.type ||
     !ProjectData.value.area
   ) {
-    alert("请输入完整信息");
+    ElMessage.warning("请输入完整信息");
     return;
   }
   projectApply(ProjectData.value)
     .then((response) => {
       if (response.data.code === 0) {
-        alert(response.data.msg || "申请成功");
+        ElMessage.success(response.data.msg || "申请成功");
       } else {
-        alert(response.data.msg || "申请失败");
+        ElMessage.error(response.data.msg || "申请失败");
       }
     })
     .catch((error) => {
       console.log(error);
-      alert("申请错误");
+      ElMessage.error("申请错误");
     })
     .finally(() => {
       centerDialogVisibleAdd.value = false;
@@ -206,6 +213,7 @@ const applyProject = async () => {
 
 // 取消输入的内容
 function cancel() {
+  centerDialogVisibleAdd.value = false;
   ProjectData.value.title = "";
   ProjectData.value.sketch = "";
   ProjectData.value.content = "";
@@ -244,7 +252,11 @@ const showConclusionButton = (status) => {
   // 项目处于"已立项"状态才可以进行审核
   return status === projectStatusContant.STATUS_LAUNCHED;
 };
-
+// 删除和邀请成员
+const showMemberButton = (status) => {
+  // 项目处于"草稿"状态才可以进行删除和邀请成员
+  return status === projectStatusContant.STATUS_DRAFT;
+};
 /* 对话框进行操作 */
 
 // ------------------- 修改项目
@@ -259,23 +271,50 @@ const formModify = ref({
   area: null,
 });
 const updateDialog = (id) => {
+  // console.log(typeof id);
   formModify.value.id = id; // 项目id
+  const index = ref({
+    id: null,
+  });
+  index.value.id = id; // 项目id
+  getProjectDetails(index.value)
+    .then((response) => {
+      if (response.data.code === 0) {
+        formModify.value.title = response.data.data.title;
+        formModify.value.sketch = response.data.data.sketch;
+        formModify.value.content = response.data.data.content;
+        formModify.value.budget = response.data.data.budget;
+        formModify.value.type = null;
+        formModify.value.area = null;
+        centerDialogVisibleModify.value = true;
+      } else {
+        ElMessage.error(response.data.msg || "加载失败");
+      }
+    })
+    .catch((error) => {
+      console.error("获取项目详情失败:", error);
+      ElMessage.error("加载失败");
+    });
   centerDialogVisibleModify.value = true;
 };
 // 修改项目接口
 const updateProject = async () => {
+  if (formModify.value.type === null || formModify.value.area === null) {
+    ElMessage.warning("请输入完整信息");
+    return;
+  }
   projectModify(formModify.value)
     .then((response) => {
       if (response.data.code === 0) {
         fetchProjects();
-        alert(response.data.msg || "修改成功");
+        ElMessage.success(response.data.msg || "修改成功");
       } else {
-        alert(response.data.msg || "修改失败");
+        ElMessage.error(response.data.msg || "修改失败");
       }
     })
     .catch((error) => {
       console.error("更新项目时发生错误:", error);
-      alert("修改项目时发生错误");
+      ElMessage.error("修改项目时发生错误");
     })
     .finally(() => {
       // 清空数据
@@ -295,26 +334,27 @@ const centerDialogVisibleDelete = ref(false);
 const formDelete = ref({
   id: null,
 });
-const deleteDialog = (id) => {
+const deleteTitle = ref("");
+const deleteDialog = (id, title) => {
   formDelete.value.id = BigInt(id); // 项目id
+  deleteTitle.value = title;
   centerDialogVisibleDelete.value = true;
 };
 // 删除项目接口
 const deleteProject = async () => {
-
-  console.log(formDelete.value)
+  console.log(formDelete.value);
   projectDelete(formDelete.value)
     .then((response) => {
       if (response.data.code === 0) {
         createProjects();
-        alert(response.data.msg || "删除成功");
+        ElMessage.success(response.data.msg || "删除成功");
       } else {
-        alert(response.data.msg || "删除失败");
+        ElMessage.error(response.data.msg || "删除失败");
       }
     })
     .catch((error) => {
       console.error("删除项目时发生错误:", error);
-      alert("删除项目时发生错误");
+      ElMessage.error("删除项目时发生错误");
     })
     .finally(() => {
       formDelete.value.id = null;
@@ -327,10 +367,14 @@ const centerDialogVisibleMember = ref(false);
 const formMember = ref({
   id: null,
 });
-const getMemberDialog = (id) => {
+const memberStatus = ref("");
+const getMemberDialog = (id, status) => {
   formMember.value.id = id; // 项目id
   formManageMember.value.id = id; // 邀请成员
   formDeleteMember.value.id = id; // 删除成员
+  memberStatus.value = showMemberButton(status);
+
+  console.log(memberStatus.value);
   centerDialogVisibleMember.value = true;
 };
 const memberData = ref([]);
@@ -349,14 +393,14 @@ const getMemberProject = async () => {
           ...item,
           id: BigInt(item.id),
         }));
-        // alert(response.data.msg || "查看成功");
+        // ElMessage.success(response.data.msg || "查看成功");
       } else {
-        alert(response.data.msg || "查看失败");
+        ElMessage.error(response.data.msg || "查看失败");
       }
     })
     .catch((error) => {
       console.error("查看发生错误:", error);
-      alert("查看发生错误");
+      ElMessage.error("查看发生错误");
     })
     .finally(() => {
       centerDialogVisibleMember.value = true;
@@ -378,14 +422,14 @@ const deleteMember = async (email) => {
     .then((response) => {
       if (response.data.code === 0) {
         getMemberProject();
-        alert(response.data.msg || "删除成功");
+        ElMessage.success(response.data.msg || "删除成功");
       } else {
-        alert(response.data.msg || "删除失败");
+        ElMessage.error(response.data.msg || "删除失败");
       }
     })
     .catch((error) => {
       console.error("删除发生错误:", error);
-      alert("删除发生错误");
+      ElMessage.error("删除发生错误");
     });
 };
 
@@ -395,11 +439,16 @@ const formManageMember = ref({
   email: "",
   is: null,
 });
-const email = ref("");
+const formEmail = ref({
+  email: "",
+});
 // 使用 watchEffect 监听 email 的变化
 watchEffect(() => {
-  formManageMember.value.email = email.value;
+  formManageMember.value.email = formEmail.value.email;
 });
+const rules = {
+  email: [{ required: true, message: "请输入邮箱地址", trigger: "blur" }],
+};
 const innerVisible = ref(false);
 const inviteMember = async () => {
   formManageMember.value.is = true; // 表示邀请成员
@@ -407,16 +456,19 @@ const inviteMember = async () => {
     .then((response) => {
       if (response.data.code === 0) {
         getMemberProject();
-        alert(response.data.msg || "邀请成功");
+        ElMessage.success(response.data.msg || "邀请成功");
       } else {
-        alert(response.data.msg || "邀请失败");
+        ElMessage.error(response.data.msg || "邀请失败");
       }
     })
     .catch((error) => {
       console.error("邀请发生错误:", error);
-      alert("邀请发生错误");
+      ElMessage.error("邀请发生错误");
     })
     .finally(() => {
+      formManageMember.value.email = "";
+      formManageMember.value.is = null;
+      formManageMember.value.id = null;
       innerVisible.value = false; // 关闭对话框
     });
 };
@@ -426,8 +478,10 @@ const centerDialogVisibleSubmit = ref(false);
 const formSubmit = ref({
   id: null,
 });
-const submitDialog = (id) => {
+const submitTitle = ref("");
+const submitDialog = (id, title) => {
   formSubmit.value.id = id; // 项目id
+  submitTitle.value = title;
   centerDialogVisibleSubmit.value = true;
 };
 // 提交项目接口
@@ -436,14 +490,14 @@ const submitProject = async () => {
     .then((response) => {
       if (response.data.code === 0) {
         fetchProjects();
-        alert(response.data.msg || "提交成功");
+        ElMessage.success(response.data.msg || "提交成功");
       } else {
-        alert(response.data.msg || "提交失败");
+        ElMessage.error(response.data.msg || "提交失败");
       }
     })
     .catch((error) => {
       console.error("提交项目发生错误:", error);
-      alert("提交项目发生错误");
+      ElMessage.error("提交项目发生错误");
     })
     .finally(() => {
       centerDialogVisibleSubmit.value = false;
@@ -451,6 +505,7 @@ const submitProject = async () => {
 };
 
 // --------------------- 结题项目
+const formTitle = ref("");
 const centerDialogVisibleConclusion = ref(false);
 const formConclusion = ref({
   id: null,
@@ -459,26 +514,27 @@ const formConclusion = ref({
 });
 const conclusionDialog = (id, title) => {
   formConclusion.value.id = id; // 项目id
-  formConclusion.value.title = title;
+  formTitle.value = title;
   centerDialogVisibleConclusion.value = true;
 };
 // 结题项目接口
 const conclusionProject = async () => {
   if (!formConclusion.value.content) {
-    alert("请输入结题内容");
+    ElMessage.warning("请输入结题内容");
     return;
   }
   projectConclude(formConclusion.value)
     .then((response) => {
       if (response.data.code === 0) {
-        alert(response.data.msg || "提交成功");
+        ElMessage.success(response.data.msg || "提交成功");
+        fetchProjects();
       } else {
-        alert(response.data.msg || "提交失败");
+        ElMessage.error(response.data.msg || "提交失败");
       }
     })
     .catch((error) => {
       console.error("提交项目发生错误:", error);
-      alert("提交项目发生错误");
+      ElMessage.error("提交项目发生错误");
     })
     .finally(() => {
       centerDialogVisibleConclusion.value = false;
@@ -486,28 +542,46 @@ const conclusionProject = async () => {
 };
 
 // --------------------- 负责人不能删除自己
-// 用户id
-const route = useRoute();
-const temp = route.query.loginId;
-const loginId = BigInt(temp);
-console.log("loginId:", loginId);
+const loginId = BigInt(JSON.parse(sessionStorage.getItem("loginId")));
 
+const showInvite = () => {
+  return memberStatus.value;
+};
 const showDelete = (id) => {
-  return !(id === loginId);
+  return !(id === loginId) && memberStatus.value;
+};
+
+const activeIndex = ref("1");
+const handleSelect = (key) => {
+  if (key === "1") {
+    createProjects();
+  } else if (key === "2") {
+    fetchProjects();
+  }
+  activeIndex.value = key;
 };
 </script>
 
 <template>
   <!-- 项目管理 - 项目申报 -->
   <div class="container">
+    <el-menu
+      :default-active="activeIndex"
+      class="el-menu-demo"
+      mode="horizontal"
+      @select="handleSelect"
+    >
+      <el-menu-item index="1">我的创建</el-menu-item>
+      <el-menu-item index="2">我的参与</el-menu-item>
+    </el-menu>
     <!-- 查询申请的项目 -->
     <div class="container-find">
-      <label for="" class="container-find-label">项目标题</label>
+      <label for="" class="container-find-label" style="margin-left: 20px;">项目</label>
       <el-select
         v-model="projectTitle"
         placeholder="请选择项目"
-        size="large"
-        style="width: 260px; margin-right: 40px"
+        clearable
+        style="min-width: 260px; max-width: 400px; margin-right: 40px"
       >
         <el-option
           v-for="item in table"
@@ -519,8 +593,6 @@ const showDelete = (id) => {
       <el-button type="primary" :icon="Search" @click="searchProjects"
         >查询</el-button
       >
-      <el-button @click="createProjects">我的创建</el-button>
-      <el-button @click="fetchProjects">我的参与</el-button>
     </div>
 
     <!-- 展示申报的项目 -->
@@ -536,17 +608,22 @@ const showDelete = (id) => {
       </div>
       <!-- 申报项目展示-->
       <div class="container-show-content">
-        <el-table :data="tableData">
+        <el-table
+          stripe
+          border
+          :data="tableData"
+          :header-row-class-name="tableRowClassName"
+        >
           <el-table-column
             fixed
             prop="title"
             label="标题"
             min-width="100"
-            max-width="170"
+            max-width="200"
             show-overflow-tooltip
           />
           <el-table-column
-            v-if="showMode.value"
+            v-if="showMode"
             prop="leaderName"
             label="负责人"
             min-width="100"
@@ -566,9 +643,7 @@ const showDelete = (id) => {
                 </template>
                 <template #reference>
                   <!-- <el-tag effect="plain" type="success"> -->
-                    {{
-                    scope.row.leaderName
-                  }}
+                  {{ scope.row.leaderName }}
                   <!-- </el-tag> -->
                 </template>
               </el-popover>
@@ -595,9 +670,7 @@ const showDelete = (id) => {
                 </template>
                 <template #reference>
                   <!-- <el-tag effect="plain" type="success"> -->
-                    {{
-                    scope.row.reviewerName || "无"
-                  }}
+                  {{ scope.row.reviewerName || "无" }}
                   <!-- </el-tag> -->
                 </template>
               </el-popover>
@@ -607,7 +680,7 @@ const showDelete = (id) => {
             prop="status"
             label="状态"
             min-width="90"
-            max-width="160"
+            max-width="180"
           >
             <template #default="scope">
               <el-popover
@@ -627,9 +700,10 @@ const showDelete = (id) => {
             </template>
           </el-table-column>
           <el-table-column
+            v-if="showMode"
             label="创建时间"
             min-width="110"
-            max-width="150"
+            max-width="170"
             show-overflow-tooltip
           >
             <template #default="scope">
@@ -649,6 +723,7 @@ const showDelete = (id) => {
             </template>
           </el-table-column>
           <el-table-column
+            v-if="showMode"
             label="修改时间"
             min-width="110"
             max-width="160"
@@ -673,7 +748,7 @@ const showDelete = (id) => {
           <el-table-column
             label="审核时间"
             min-width="110"
-            max-width="160"
+            max-width="170"
             show-overflow-tooltip
           >
             <template #default="scope">
@@ -718,7 +793,7 @@ const showDelete = (id) => {
           <el-table-column
             fixed="right"
             label="操作"
-            min-width="190"
+            min-width="160"
             max-width="280"
           >
             <template #default="scope">
@@ -742,14 +817,14 @@ const showDelete = (id) => {
                 type="danger"
                 size="small"
                 v-if="showDeleteButton(scope.row.status)"
-                @click="deleteDialog(scope.row.id)"
+                @click="deleteDialog(scope.row.id, scope.row.title)"
                 >删除</el-button
               >
               <el-button
                 link
                 type="primary"
                 size="small"
-                @click="getMemberDialog(scope.row.id)"
+                @click="getMemberDialog(scope.row.id, scope.row.status)"
                 >管理成员</el-button
               >
               <el-button
@@ -757,7 +832,7 @@ const showDelete = (id) => {
                 type="success"
                 size="small"
                 v-if="showsubmitButton(scope.row.status)"
-                @click="submitDialog(scope.row.id)"
+                @click="submitDialog(scope.row.id, scope.row.title)"
                 >提交</el-button
               >
               <el-button
@@ -777,7 +852,7 @@ const showDelete = (id) => {
     <!-- 新增项目 -->
     <el-dialog
       v-model="centerDialogVisibleAdd"
-      title="申请项目"
+      title="申报项目"
       width="900"
       center
     >
@@ -786,7 +861,7 @@ const showDelete = (id) => {
         <div class="container-card">
           <div class="container-card-content" id="title">
             <label for="" class="container-card-content-label"
-              >项目标题 *</label
+              >* 项目标题</label
             >
             <el-input
               v-model="ProjectData.title"
@@ -795,22 +870,9 @@ const showDelete = (id) => {
               clearable
             />
           </div>
-          <div class="container-card-content" id="sketch">
-            <label for="" class="container-card-content-label"
-              >项目简述 *</label
-            >
-            <el-input
-              v-model="ProjectData.sketch"
-              width="100%"
-              placeholder="项目简述"
-              clearable
-            />
-          </div>
-        </div>
-        <div class="container-card">
           <div class="container-card-content" id="budget">
             <label for="" class="container-card-content-label"
-              >项目预算 *</label
+              >* 项目预算</label
             >
             <el-input
               v-model="ProjectData.budget"
@@ -820,22 +882,11 @@ const showDelete = (id) => {
               type="number"
             />
           </div>
-          <div class="container-card-content" id="content">
-            <label for="" class="container-card-content-label"
-              >项目内容 *</label
-            >
-            <el-input
-              v-model="ProjectData.content"
-              width="100%"
-              placeholder="项目内容"
-              clearable
-            />
-          </div>
         </div>
         <div class="container-card">
           <div class="container-card-content" id="budget">
             <label for="" class="container-card-content-label"
-              >项目类型 *</label
+              >* 项目类型</label
             >
             <el-select
               v-model="ProjectData.type"
@@ -853,7 +904,7 @@ const showDelete = (id) => {
           </div>
           <div class="container-card-content" id="content">
             <label for="" class="container-card-content-label"
-              >项目领域 *</label
+              >* 项目领域</label
             >
             <el-select
               v-model="ProjectData.area"
@@ -868,6 +919,32 @@ const showDelete = (id) => {
                 :value="item.id"
               />
             </el-select>
+          </div>
+        </div>
+        <div class="container-card">
+          <div class="container-card-content" id="sketch">
+            <label for="" class="container-card-content-label"
+              >* 项目简述</label
+            >
+            <el-input
+              v-model="ProjectData.sketch"
+              style="width: 300px"
+              placeholder="项目简述"
+              clearable
+              type="textarea"
+            />
+          </div>
+          <div class="container-card-content" id="content">
+            <label for="" class="container-card-content-label"
+              >* 项目内容</label
+            >
+            <el-input
+              v-model="ProjectData.content"
+              style="width: 300px"
+              placeholder="项目内容"
+              clearable
+              type="textarea"
+            />
           </div>
         </div>
         <div class="container-certain">
@@ -888,7 +965,11 @@ const showDelete = (id) => {
       align-center
     >
       <el-form-item label="项目标题">
-        <el-input v-model="formModify.title" placeholder="请输入标题" />
+        <el-input
+          v-model="formModify.title"
+          type="text"
+          placeholder="请输入标题"
+        />
       </el-form-item>
       <el-form-item label="项目简述">
         <el-input v-model="formModify.sketch" placeholder="请输入简述" />
@@ -904,11 +985,7 @@ const showDelete = (id) => {
         <el-input v-model="formModify.budget" placeholder="请输入预算" />
       </el-form-item>
       <el-form-item label="项目类型">
-        <el-select
-          v-model="ProjectData.type"
-          clearable
-          placeholder="请选择类型"
-        >
+        <el-select v-model="formModify.type" clearable placeholder="请选择类型">
           <el-option
             v-for="item in optionTypes"
             :key="item.id"
@@ -918,11 +995,7 @@ const showDelete = (id) => {
         </el-select>
       </el-form-item>
       <el-form-item label="项目领域">
-        <el-select
-          v-model="ProjectData.area"
-          clearable
-          placeholder="请选择领域"
-        >
+        <el-select v-model="formModify.area" clearable placeholder="请选择领域">
           <el-option
             v-for="item in optionAreas"
             :key="item.id"
@@ -946,7 +1019,7 @@ const showDelete = (id) => {
       width="500"
       align-center
     >
-      <span>确定要删除该项目吗？您将无法恢复已删除的项目</span>
+      <span>确定要删除项目{{ deleteTitle }}吗？您将无法恢复已删除的项目</span>
       <template #footer>
         <div class="dialog-footer">
           <el-button @click="centerDialogVisibleDelete = false">取消</el-button>
@@ -960,18 +1033,23 @@ const showDelete = (id) => {
       v-model="centerDialogVisibleMember"
       title="项目成员"
       min-width="850"
-      max-width="1100"
+      max-width="1500"
       align-center
     >
       <div>
-        <el-table :data="memberData" stripe style="width: 100%">
-          <!-- <el-table-column fixed prop="id" label="用户id" min-width="100" max-width="150"/> -->
+        <el-table
+          :data="memberData"
+          stripe
+          style="width: 100%"
+          :header-row-class-name="tableRowClassName"
+        >
           <el-table-column
             fixed
             prop="email"
             label="用户邮箱"
-            min-width="150"
+            min-width="180"
             max-width="240"
+            show-overflow-tooltip
           />
           <el-table-column
             prop="name"
@@ -985,24 +1063,24 @@ const showDelete = (id) => {
             min-width="130"
             max-width="200"
           />
-          <el-table-column
+          <!-- <el-table-column
             prop="qq"
             label="QQ"
             min-width="100"
-            max-width="180"
+            max-width="200"
           />
           <el-table-column
-            prop="qq"
+            prop="wechat"
             label="微信号"
             min-width="100"
-            max-width="180"
+            max-width="200"
           />
           <el-table-column
             prop="institution"
             label="所属机构"
             min-width="100"
             max-width="170"
-          />
+          /> -->
           <el-table-column fixed="right" label="操作" width="100">
             <template #default="scope">
               <!-- <el-popover :visible="visible" placement="top" :width="160">
@@ -1043,8 +1121,16 @@ const showDelete = (id) => {
         title="邀请成员"
         append-to-body
       >
-        <span>邮箱地址</span>
-        <el-input placeholder="请输入成员邮箱" v-model="email"></el-input>
+        <!-- <span style="margin-right: 10px;">邮箱地址</span>
+        <el-input placeholder="请输入成员邮箱" v-model="email"></el-input> -->
+        <el-form :model="formEmail" :rules="rules" ref="formRef">
+          <el-form-item label="成员邮箱" prop="email" :rules="emailRules">
+            <el-input
+              placeholder="请输入成员邮箱"
+              v-model="formEmail.email"
+            ></el-input>
+          </el-form-item>
+        </el-form>
         <template #footer>
           <div class="dialog-footer">
             <el-button @click="innerVisible = false">取消</el-button>
@@ -1054,7 +1140,11 @@ const showDelete = (id) => {
       </el-dialog>
       <template #footer>
         <div class="dialog-footer">
-          <el-button type="primary" @click="innerVisible = true">
+          <el-button
+            type="primary"
+            @click="innerVisible = true"
+            v-if="showInvite()"
+          >
             邀请
           </el-button>
         </div>
@@ -1068,7 +1158,7 @@ const showDelete = (id) => {
       width="500"
       align-center
     >
-      <span>确定要提交该项目吗？</span>
+      <span>您确定要提交项目 {{ submitTitle }}吗？</span>
       <template #footer>
         <div class="dialog-footer">
           <el-button @click="centerDialogVisibleSubmit = false">取消</el-button>
@@ -1084,15 +1174,32 @@ const showDelete = (id) => {
       width="600"
       align-center
     >
-      <div style="display: flex">
-        <label for="">结题内容</label>
-        <el-input
-          v-model="formConclusion.content"
-          style="width: 500px; margin-left: 10px"
-          :autosize="{ minRows: 3, maxRows: 8 }"
-          type="textarea"
-          placeholder="请输入结题内容"
-        />
+      <div style="display: flex; flex-direction: column; margin-top: 10px">
+        <div style="display: flex; flex-direction: row; margin-bottom: 20px">
+          <label for="" style="margin-right: 6px">项目标题</label>
+          <el-input
+            disabled
+            v-model="formTitle"
+            style="width: 500px"
+          ></el-input>
+        </div>
+        <div style="display: flex; flex-direction: row; margin-bottom: 20px">
+          <label for="" style="margin-right: 6px">结题标题</label>
+          <el-input
+            v-model="formConclusion.title"
+            style="width: 500px"
+          ></el-input>
+        </div>
+        <div style="display: flex; flex-direction: row">
+          <label for="">结题内容</label>
+          <el-input
+            v-model="formConclusion.content"
+            style="width: 500px; margin-left: 10px"
+            :autosize="{ minRows: 3, maxRows: 8 }"
+            type="textarea"
+            placeholder="请输入结题内容"
+          />
+        </div>
       </div>
 
       <template #footer>
@@ -1114,6 +1221,12 @@ const showDelete = (id) => {
   flex-direction: column;
 }
 
+.el-table >>> .success-row th {
+  background: #edf6fb !important;
+  background: #525fad !important;
+  color: #fff !important;
+}
+
 .el-input {
   width: 300px;
 }
@@ -1125,7 +1238,7 @@ const showDelete = (id) => {
 .container-find {
   display: flex;
   flex-direction: row;
-  justify-content: center;
+  /* justify-content: center; */
   align-items: center;
   height: 90px;
   margin-bottom: 10px;

@@ -2,7 +2,8 @@
 import { ref, onMounted } from "vue";
 import { useRoute } from "vue-router";
 import { getProjectDetails } from "@/api/project/index.js";
-import { convertTimestamp } from '@/utils/timeConverter.js'
+import { convertTimestamp } from '@/utils/timeConverter.js';
+import { ElMessage } from "element-plus";
 
 
 const route = useRoute();
@@ -32,11 +33,11 @@ const fetchProjectDetails = async () => {
         projectDetails.value.achieveNum = BigInt(projectDetails.value.achieveNum),
         projectDetails.value.fundNum = BigInt(projectDetails.value.fundNum)
       } else {
-        alert(response.data.msg || "获取项目详情失败");
+        ElMessage.error(response.data.msg || "获取项目详情失败");
       }
     })
     .catch((error) => {
-        alert("加载项目详情失败，请稍后重试");
+        ElMessage.error("加载项目详情失败");
         console.log(error)
     });
 };
@@ -105,7 +106,7 @@ onMounted(() => {
               projectDetails.budget
             }}</el-text>
           </el-form-item>
-          <el-form-item label="内容" class="container-card-content-label">
+          <el-form-item label="内容">
             <el-text class="mx-1" style="width: 800px; white-space: pre-wrap;">{{
               projectDetails.content
             }}</el-text>

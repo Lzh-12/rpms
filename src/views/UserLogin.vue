@@ -1,16 +1,13 @@
 <script setup>
 import { ref } from "vue";
 import router from "@/router";
-import {
-  loginService,
-  registerService,
-
-} from "@/api/auth/index.js";
+import { loginService, registerService } from "@/api/auth/index.js";
 import { tokenObj } from "@/utils/request.js";
-import { getInstitutionsInfo } from "@/api/info/index.js";
+import { getInstitutionsInfo } from "@/api/user/index.js";
 import { projectAreas, projectTypes } from "@/api/project/index.js";
 import { projectFundTypes } from "@/api/fund/index.js";
 import { achieveTypes } from "@/api/achieve/index.js";
+import { ElMessage } from "element-plus";
 
 // 身份选择
 const options = [
@@ -24,9 +21,11 @@ const options = [
   },
   {
     value: 3,
-    label: "科研机构管理员",
+    label: "管理员",
   },
 ];
+
+const rePassword = ref("");
 
 // 获取所有机构信息
 const getInstitution = async () => {
@@ -36,11 +35,11 @@ const getInstitution = async () => {
         // 缓存数据本地存储 (转换成字符串)
         localStorage.setItem("institution", JSON.stringify(response.data.data));
       } else {
-        alert(response.data.msg || "获取机构信息失败");
+        ElMessage.success(response.data.msg || "获取机构信息失败");
       }
     })
     .catch((error) => {
-      alert("获取机构信息错误");
+      ElMessage.error("获取机构信息错误");
       console.log("获取机构信息错误", error);
     });
 };
@@ -55,17 +54,17 @@ const getProjectAreas = async () => {
           JSON.stringify(response.data.data)
         );
       } else {
-        alert(response.data.msg || "获取项目领域信息失败");
+        ElMessage.error(response.data.msg || "获取项目领域信息失败");
       }
     })
     .catch((error) => {
-      alert("获取项目领域信息错误");
+      ElMessage.error("获取项目领域信息错误");
       console.log("获取项目领域信息错误", error);
     });
 };
 // 获取项目所有类型信息
 const getProjectTypes = async () => {
-    projectTypes()
+  projectTypes()
     .then((response) => {
       if (response.data.code === 0) {
         localStorage.setItem(
@@ -73,38 +72,35 @@ const getProjectTypes = async () => {
           JSON.stringify(response.data.data)
         );
       } else {
-        alert(response.data.msg || "获取项目类型失败");
+        ElMessage.error(response.data.msg || "获取项目类型失败");
       }
     })
     .catch((error) => {
-      alert("获取项目类型错误");
+      ElMessage.error("获取项目类型错误");
       console.log("获取项目类型错误", error);
     });
 };
 // 获取经费所有类型信息
 const getFundTypes = async () => {
-    projectFundTypes()
+  projectFundTypes()
     .then((response) => {
       if (response.data.code === 0) {
-        localStorage.setItem(
-          "fundTypes",
-          JSON.stringify(response.data.data)
-        );
+        localStorage.setItem("fundTypes", JSON.stringify(response.data.data));
 
         const storedData = JSON.parse(localStorage.getItem("fundTypes"));
         console.log(storedData);
       } else {
-        alert(response.data.msg || "获取经费类型失败");
+        ElMessage.error(response.data.msg || "获取经费类型失败");
       }
     })
     .catch((error) => {
-      alert("获取经费类型错误");
+      ElMessage.error("获取经费类型错误");
       console.log("获取经费类型错误", error);
     });
 };
 // 获取成果所有类型信息
 const getAchieveTypes = async () => {
-    achieveTypes()
+  achieveTypes()
     .then((response) => {
       if (response.data.code === 0) {
         localStorage.setItem(
@@ -115,11 +111,11 @@ const getAchieveTypes = async () => {
         const storedData = JSON.parse(localStorage.getItem("achieveTypes"));
         console.log(storedData);
       } else {
-        alert(response.data.msg || "获取成果类型失败");
+        ElMessage.error(response.data.msg || "获取成果类型失败");
       }
     })
     .catch((error) => {
-      alert("获取成果类型错误");
+      ElMessage.error("获取成果类型错误");
       console.log("获取成果类型错误", error);
     });
 };
@@ -139,67 +135,79 @@ const submitLogin = async () => {
     !loginData.value.password ||
     !loginData.value.type
   ) {
-    alert("请确保输入完整数据");
+    ElMessage.warning("请确保输入完整数据");
     return;
   }
-  
+
   loginService(loginData.value)
     .then((response) => {
-
-      console.log(response)
       if (response.data.code === 0) {
+        ElMessage.success(response.data.msg || "登录成功");
+        tokenObj.tokenName = response.data.data.tokenName;
+        tokenObj.tokenValue = response.data.data.tokenValue;
+        sessionStorage.setItem(
+          "satoken",
+          JSON.stringify(response.data.data.tokenValue)
+        );
+        const now = new Date();
+        // 计算过期时间
+        const expirationDate = new Date(
+          now.getTime() + response.data.data.tokenTimeout * 1000
+        );
+        sessionStorage.setItem("tokenTimeout", JSON.stringify(expirationDate));
+        sessionStorage.setItem(
+          "loginId",
+          JSON.stringify(response.data.data.loginId)
+        );
+
         // 根据身份跳转
         if (loginData.value.type === 1) {
           router.push({
             name: "ScienceHome",
-            query: { loginId: response.data.data.loginId },
+            // query: { loginId: response.data.data.loginId },
           });
         } else if (loginData.value.type === 2) {
-          // console.log("数据", response.data.data.loginId);
           router.push({
             name: "DirectorHome",
-            query: { loginId: response.data.data.loginId },
+            // query: { loginId: response.data.data.loginId },
           });
         } else if (loginData.value.type === 3) {
           router.push({
             name: "AdminHome",
-            query: { loginId: response.data.data.loginId },
+            // query: { loginId: response.data.data.loginId },
           });
         }
         loginData.value.email = "";
         loginData.value.password = "";
         loginData.value.type = null;
-        // 保存 token
-        tokenObj.tokenName = response.data.data.tokenName;
-        tokenObj.tokenValue = response.data.data.tokenValue;
         getInstitution(); // 获取所有机构信息
         getProjectAreas(); // 获取项目所有领域信息
         getProjectTypes(); // 获取项目所有类型信息
         getFundTypes(); // 获取经费所有类型信息
         getAchieveTypes(); // 获取成果所有类型信息
-        alert(response.data.msg || "登录成功");
       } else {
-        alert(response.data.msg || "登录失败");
+        ElMessage.error(response.data.msg || "登录失败");
       }
     })
     .catch((error) => {
-      alert("登录错误", error);
+      ElMessage.error("登录错误", error);
     });
 };
 
 // 定义注册数据模型
 const registerData = ref({
   email: "",
-  password: ""
+  password: "",
 });
 // 注册接口
 const submitRegister = async () => {
   // 检查表单数据是否完整
-  if (
-    !loginData.value.email ||
-    !loginData.value.password
-  ) {
-    alert("请确保输入完整数据");
+  if (!loginData.value.email || !loginData.value.password) {
+    ElMessage.warning("请确保输入完整数据");
+    return;
+  }
+  if (loginData.value.password !== rePassword.value) {
+    ElMessage.warning("两次密码输入不一致");
     return;
   }
   registerData.value.email = loginData.value.email;
@@ -207,45 +215,20 @@ const submitRegister = async () => {
   registerService(registerData.value)
     .then((response) => {
       if (response.data.code === 0) {
-        alert(response.data.msg || "注册成功");
+        ElMessage.success(response.data.msg || "注册成功");
       } else {
-        alert(response.data.msg || "注册失败");
+        ElMessage.error(response.data.msg || "注册失败");
       }
     })
     .catch((error) => {
-      alert("注册错误");
+      ElMessage.error("注册错误");
       console.log("注册错误", error);
     })
     .finally(() => {
-      mode.value = !mode.value;
       registerData.value.email = "";
       registerData.value.password = "";
-      // registerData.value.code = "";
     });
 };
-
-// 发送验证码接口
-// const sendCaptcha = async () => {
-//   registerData.value.email = loginData.value.email;
-//   if (!registerData.value.email) {
-//     alert("请输入邮箱地址");
-//     return;
-//   }
-
-//   // 发送验证码
-//   registerCodeService(registerData.value.email)
-//     .then((response) => {
-//       if (response.data.code === 0) {
-//         alert(response.data.msg || "注册链接已发送到邮箱");
-//       } else {
-//         alert(response.data.msg || "注册链接发送失败");
-//       }
-//     })
-//     .catch((error) => {
-//       alert("发送错误");
-//       console.log("发送错误", error);
-//     });
-// };
 
 // 切换登录注册界面
 const mode = ref(true);
@@ -296,6 +279,18 @@ function changeMode() {
             required
           />
         </div>
+        <div class="container-card-right-form" v-if="!mode">
+          <label for="password" class="container-card-right-form-title"
+            >RePassword</label
+          >
+          <input
+            type="password"
+            v-model="rePassword"
+            placeholder="rePassword"
+            class="container-card-right-form-content"
+            required
+          />
+        </div>
         <!-- 选择身份 -->
         <div class="container-card-right-form" v-if="mode">
           <label for="identity" class="container-card-right-form-title"
@@ -316,30 +311,6 @@ function changeMode() {
             </el-select>
           </div>
         </div>
-        <!-- 验证码 -->
-        <!-- <div class="container-card-right-form" v-if="!mode"> -->
-          <!-- <label for="captcha" class="container-card-right-form-title"
-            >Captcha</label
-          > -->
-          <!-- <div class="container-card-right-form-captcha"> -->
-            <!-- <input
-              type="text"
-              v-model="registerData.captcha"
-              placeholder="Captcha"
-              class="container-card-right-form-content2"
-              required
-            /> -->
-            <!-- <label for="captcha" class="container-card-right-form-title"
-            >Captcha</label
-          >
-            <button
-              class="container-card-right-form-captcha-button"
-              @click="sendCaptcha"
-            >
-              captcha
-            </button>
-          </div>
-        </div> -->
         <!-- 点击登录 -->
         <div class="container-card-right-form">
           <button

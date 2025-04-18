@@ -2,6 +2,7 @@
 import { ref, onMounted } from "vue";
 import { projectMy } from "@/api/project/index.js";
 import { projectFund } from "@/api/fund/index.js";
+import { ElMessage } from "element-plus";
 
 // 提示框
 const centerDialogVisible = ref(false);
@@ -21,11 +22,11 @@ const fetchOptions = async () => {
             id: BigInt(item.id).toString()
           }));
       } else {
-        alert(response.data.msg || "加载失败");
+        ElMessage.error(response.data.msg || "加载失败");
       }
     })
     .catch((error) => {
-      alert("加载错误");
+      ElMessage.error("加载错误");
       console.log("加载错误", error);
     });
 };
@@ -37,7 +38,7 @@ onMounted(() => {
   optionTypes.value = JSON.parse(localStorage.getItem("fundTypes"));
 });
 
-const projectId = ref(null);
+// const projectId = ref(null);
 // 创建经费申请模型
 const form = ref({
   id: null,
@@ -45,20 +46,27 @@ const form = ref({
   content: "",
   type: null,
 });
+const handleSubmit = () => {
+  if(!form.value.id ||!form.value.figure ||!form.value.type ||!form.value.content){
+    ElMessage.warning("请填写完整信息");
+    return;
+  }
+  centerDialogVisible.value = true;
+};
 // 创建经费申请接口
 const onSubmit = async () => {
-  form.value.id = BigInt(projectId.value);
+  // form.value.id = BigInt(projectId.value);
   form.value.figure = BigInt(form.value.figure);
   projectFund(form.value)
     .then((response) => {
       if (response.data.code === 0) {
-        alert(response.data.msg || "创建成功");
+        ElMessage.success(response.data.msg || "创建成功");
       } else {
-        alert(response.data.msg || "创建失败");
+        ElMessage.error(response.data.msg || "创建失败");
       }
     })
     .catch((error) => {
-      alert("创建错误");
+      ElMessage.error("创建错误");
       console.log("创建错误", error);
     })
     .finally(() => {
@@ -78,13 +86,28 @@ const onCancel = () => {
   form.value.content = "";
   form.value.type = null;
 };
+
+const rules = {
+      id: [
+        { required: true, message: '请选择项目', trigger: 'change' }
+      ],
+      figure: [
+        { required: true, message: '请输入成果标题', trigger: 'blur' },
+      ],
+      type: [
+        { required: true, message: '请选择成果类型', trigger: 'change' }
+      ],
+      content: [
+        { required: true, message: '请输入成果内容', trigger: 'blur' }
+      ]
+    }
 </script>
 
 <template>
   <div class="container">
-    <el-form :model="form" label-width="auto" style="width: 60%">
-      <el-form-item label="项目标题">
-        <el-select v-model="projectId" placeholder="请选择项目">
+    <el-form :model="form" :rules="rules" ref="formRef" label-width="auto" style="width: 60%">
+      <el-form-item label="项目标题" prop="id">
+        <el-select v-model="form.id" placeholder="请选择项目">
           <el-option
             v-for="item in options"
             :key="item.id"
@@ -93,14 +116,14 @@ const onCancel = () => {
           />
         </el-select>
       </el-form-item>
-      <el-form-item label="经费预算">
+      <el-form-item label="经费预算" prop="figure">
         <el-input
           v-model="form.figure"
           type="number"
           placeholder="请输入经费预算"
         />
       </el-form-item>
-      <el-form-item label="经费类型">
+      <el-form-item label="经费类型" prop="type">
         <el-select v-model="form.type" placeholder="请选择类型">
           <el-option
             v-for="item in optionTypes"
@@ -110,7 +133,7 @@ const onCancel = () => {
           />
         </el-select>
       </el-form-item>
-      <el-form-item label="经费内容">
+      <el-form-item label="经费内容" prop="content">
         <el-input
           v-model="form.content"
           type="textarea"
@@ -118,7 +141,7 @@ const onCancel = () => {
         />
       </el-form-item>
       <el-form-item class="el-form-button">
-        <el-button type="primary" @click="centerDialogVisible = true"
+        <el-button type="primary" @click="handleSubmit"
           >提交</el-button
         >
         <el-button @click="onCancel">取消</el-button>

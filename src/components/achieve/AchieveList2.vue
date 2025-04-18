@@ -14,6 +14,8 @@ import {
   projectStatusMap,
 } from "@/constants/statusConstants.js";
 import { convertTimestamp, formatTime } from "@/utils/timeConverter.js";
+import { ElMessage } from "element-plus";
+import { tableRowClassName } from "@/utils/tableUtils.js";
 
 // 表格数据
 const tableData = ref([]);
@@ -26,7 +28,7 @@ const fetchTableData = async () => {
           ...item,
           id: BigInt(item.id).toString(),
           projectId: BigInt(item.projectId).toString(),
-          projecStatus: projectStatusMap[item.projecStatus],
+          projectStatus: projectStatusMap[item.projectStatus],
           status: achieveStatusMap[item.status] || "未知状态",
           gmtCreate: convertTimestamp(item.gmtCreate).toString(),
           gmtModify:
@@ -54,11 +56,11 @@ const fetchTableData = async () => {
               : formatTime(item.gmtReview).toString(),
         }));
       } else {
-        alert(response.data.msg || "加载失败");
+        ElMessage.error(response.data.msg || "加载失败");
       }
     })
     .catch((error) => {
-      alert("加载错误");
+      ElMessage.error("加载错误");
       console.log("加载错误", error);
     });
 };
@@ -76,34 +78,36 @@ onMounted(() => {
   fetchTableData();
 });
 
+const formTitle = ref("");
 const centerDialogVisible = ref(false);
 const formDelte = ref({
   id: null,
 });
 
 // 对话框
-const deleteDialog = async (id) => {
+const deleteDialog = async (id, title) => {
   centerDialogVisible.value = true;
   formDelte.value.id = BigInt(id);
+  formTitle.value = title;
 };
 // 删除
 const showDeleteButton = (status) => {
   // 仅状态为"草稿”的成果可以删除
   return status === achieveStatusContant.STATUS_DRAFT;
 };
-// 删除经费申请接口
+// 删除成果申请接口
 const deleteAchieveApply = async () => {
   achieveDelete(formDelte.value)
     .then((response) => {
       if (response.data.code === 0) {
         fetchTableData();
-        alert(response.data.msg || "删除成功");
+        ElMessage.success(response.data.msg || "删除成功");
       } else {
-        alert(response.data.msg || "删除失败");
+        ElMessage.error(response.data.msg || "删除失败");
       }
     })
     .catch((error) => {
-      alert("删除错误");
+      ElMessage.error("删除错误");
       console.log("删除错误", error);
     })
     .finally(() => {
@@ -122,27 +126,23 @@ const showReviewButton = (status) => {
   // 状态为“已提交”的成果申请可以进行审核
   return status === achieveStatusContant.STATUS_SUBMIT;
 };
-const reviewDialog = async (id) => {
+const reviewDialog = async (id, title) => {
   centerDialogVisible2.value = true;
   formReview.value.id = BigInt(id);
+  formTitle.value = title;
 };
 const reviewAchieveApply = async () => {
-  if (status.value !== "未处理") {
-    alert("无法审核当前的成果申请");
-    centerDialogVisible2.value = false;
-    return;
-  }
   achieveExamine(formReview.value)
     .then((response) => {
       if (response.data.code === 0) {
         fetchTableData();
-        alert(response.data.msg || "审核成功");
+        ElMessage.success(response.data.msg || "审核成功");
       } else {
-        alert(response.data.msg || "审核失败");
+        ElMessage.error(response.data.msg || "审核失败");
       }
     })
     .catch((error) => {
-      alert("审核错误");
+      ElMessage.error("审核错误");
       console.log("审核错误", error);
     })
     .finally(() => {
@@ -171,13 +171,13 @@ const submitAchieveApply = async () => {
     .then((response) => {
       if (response.data.code === 0) {
         fetchTableData();
-        alert(response.data.msg || "提交成功");
+        ElMessage.success(response.data.msg || "提交成功");
       } else {
-        alert(response.data.msg || "提交失败");
+        ElMessage.error(response.data.msg || "提交失败");
       }
     })
     .catch((error) => {
-      alert("提交错误");
+      ElMessage.error("提交错误");
       console.log("提交错误", error);
     })
     .finally(() => {
@@ -197,32 +197,58 @@ const formModify = ref({
   content: "",
   type: null,
 });
-const modifyDialog = async (id) => {
+const modifyDialog = async (id, title, content, type) => {
   centerDialogVisibleModify.value = true;
   formModify.value.id = BigInt(id); // 成果id
+  formModify.value.title = title;
+  formModify.value.content = content;
+  for (let i = 0; i < optionTypes.value.length; i++) {
+    if (optionTypes.value[i].name === type) {
+      formModify.value.type = optionTypes.value[i].id;
+      break;
+    }
+  }
+  formTitle.value = title;
 };
 const modifyAchieve = async () => {
   achieveModify(formModify.value)
     .then((response) => {
       if (response.data.code === 0) {
         fetchTableData();
-        alert(response.data.msg || "修改成功");
+        ElMessage.success(response.data.msg || "修改成功");
       } else {
-        alert(response.data.msg || "修改失败");
+        ElMessage.error(response.data.msg || "修改失败");
       }
     })
     .catch((error) => {
-      alert("修改错误");
+      ElMessage.error("修改错误");
       console.log("修改错误", error);
     })
     .finally(() => {
       centerDialogVisibleModify.value = false;
+      formModify.value.id = null;
+      formModify.value.title = "";
+      formModify.value.content = "";
+      formModify.value.type = null;
     });
+};
+
+const rulesModify = {
+  title: [
+    { required: true, message: "请输入成果标题", trigger: "blur" },
+    { min: 3, message: "成果标题长度不能少于3个字符", trigger: "blur" },
+  ],
+  type: [{ required: true, message: "请选择成果类型", trigger: "change" }],
+  content: [{ required: true, message: "请输入成果内容", trigger: "blur" }],
 };
 </script>
 
 <template>
-  <el-table :data="tableData" style="width: 100%">
+  <el-table
+    :data="tableData"
+    style="width: 100%"
+    :header-row-class-name="tableRowClassName"
+  >
     <el-table-column
       fixed
       label="项目状态"
@@ -348,7 +374,7 @@ const modifyAchieve = async () => {
           type="primary"
           size="small"
           v-if="showSubmitButton(scope.row.status, scope.row.projecStatus)"
-          @click="submitDialog(scope.row.id)"
+          @click="submitDialog(scope.row.id, scope.row.title)"
         >
           提交
         </el-button>
@@ -357,7 +383,7 @@ const modifyAchieve = async () => {
           type="primary"
           size="small"
           v-if="showModifyButton(scope.row.status)"
-          @click="modifyDialog(scope.row.id)"
+          @click="modifyDialog(scope.row.id, scope.row.title)"
         >
           修改
         </el-button>
@@ -365,7 +391,7 @@ const modifyAchieve = async () => {
           link
           type="danger"
           size="small"
-          @click="deleteDialog(scope.row.id)"
+          @click="deleteDialog(scope.row.id, scope.row.title)"
           v-if="showDeleteButton(scope.row.status)"
         >
           删除
@@ -373,8 +399,7 @@ const modifyAchieve = async () => {
         <el-button
           link
           type="primary"
-          size="small"
-          @click="reviewDialog(scope.row.id)"
+          @click="reviewDialog(scope.row.id, scope.row.title)"
           v-if="showReviewButton(scope.row.status)"
         >
           审核
@@ -385,7 +410,7 @@ const modifyAchieve = async () => {
 
   <!-- 提交成果 -->
   <el-dialog v-model="centerDialogVisible" title="提交成果" width="500" center>
-    <span> 确认提交？提交后不可修改 </span>
+    <span> 确认提交 {{ formTitle }}？提交后不可修改 </span>
     <template #footer>
       <div class="dialog-footer">
         <el-button @click="centerDialogVisibleSubmit = false">取消</el-button>
@@ -399,20 +424,26 @@ const modifyAchieve = async () => {
   <!-- 修改成果 -->
   <el-dialog
     v-model="centerDialogVisibleModify"
-    title="修改经成果"
+    title="修改成果"
     width="600"
     center
   >
     <div style="display: flex; flex-direction: column; align-items: center">
-      <el-form :model="formModify" label-width="auto" style="width: 70%">
-        <el-form-item label="成果标题">
+      <el-form
+        :model="formModify"
+        :rules="rulesModify"
+        ref="formModifyRef"
+        label-width="auto"
+        style="width: 70%"
+      >
+        <el-form-item label="成果标题" prop="title">
           <el-input
             v-model="formModify.title"
             type="number"
             placeholder="请输入成果标题"
           />
         </el-form-item>
-        <el-form-item label="成果类型">
+        <el-form-item label="成果类型" prop="type">
           <el-select v-model="formModify.type" placeholder="请选择类型">
             <el-option
               v-for="item in optionTypes"
@@ -422,7 +453,7 @@ const modifyAchieve = async () => {
             />
           </el-select>
         </el-form-item>
-        <el-form-item label="成果内容">
+        <el-form-item label="成果内容" prop="content">
           <el-input
             v-model="formModify.content"
             type="textarea"
@@ -441,7 +472,7 @@ const modifyAchieve = async () => {
 
   <!-- 删除成果 -->
   <el-dialog v-model="centerDialogVisible" title="提示" width="500" center>
-    <span> 确认删除？删除后不可修改 </span>
+    <span> 确认删除成果 {{ formTitle }}？删除后不可修改 </span>
     <template #footer>
       <div class="dialog-footer">
         <el-button @click="centerDialogVisible = false">取消</el-button>
@@ -462,7 +493,7 @@ const modifyAchieve = async () => {
         style="width: 80%"
       />
     </div>
-    <label for="" style="margin-right: 20px;">确认同意</label>
+    <label for="" style="margin-right: 20px">确认同意</label>
     <input
       type="radio"
       name="approved"
@@ -489,4 +520,8 @@ const modifyAchieve = async () => {
 </template>
   
 <style scoped>
+.el-table >>> .success-row th {
+  background: #525fad !important;
+  color: #fff !important;
+}
 </style>

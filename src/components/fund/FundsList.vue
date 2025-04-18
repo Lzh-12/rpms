@@ -10,9 +10,11 @@ import {
   fundStatusContant,
   fundStatusMap,
   projectStatusContant,
-  projectStatusMap
+  projectStatusMap,
 } from "@/constants/statusConstants.js";
 import { convertTimestamp, formatTime } from "@/utils/timeConverter.js";
+import { ElMessage } from "element-plus";
+import { tableRowClassName } from "@/utils/tableUtils.js";
 
 // ---------------------- 申请列表
 const tableData = ref([]);
@@ -26,7 +28,7 @@ const fetchTableData = async () => {
           ...item,
           id: BigInt(item.id).toString(),
           projectId: BigInt(item.projectId).toString(),
-          projecStatus: projectStatusMap[item.projecStatus],
+          projectStatus: projectStatusMap[item.projectStatus],
           figure: BigInt(item.figure).toString(),
           status: fundStatusMap[item.status] || "未知状态",
           gmtCreate: convertTimestamp(item.gmtCreate),
@@ -45,11 +47,11 @@ const fetchTableData = async () => {
               : formatTime(item.gmtReview).toString(),
         }));
       } else {
-        alert(response.data.msg || "加载失败");
+        ElMessage.error(response.data.msg || "加载失败");
       }
     })
     .catch((error) => {
-      alert("加载错误");
+      ElMessage.error("加载错误");
       console.log("加载错误", error);
     });
 };
@@ -87,13 +89,13 @@ const deleteFundApply = async () => {
     .then((response) => {
       if (response.data.code === 0) {
         fetchTableData();
-        alert(response.data.msg || "删除成功");
+        ElMessage.success(response.data.msg || "删除成功");
       } else {
-        alert(response.data.msg || "删除失败");
+        ElMessage.error(response.data.msg || "删除失败");
       }
     })
     .catch((error) => {
-      alert("删除错误");
+      ElMessage.error("删除错误");
       console.log("删除错误", error);
     })
     .finally(() => {
@@ -128,13 +130,13 @@ const submitFundApply = async () => {
     .then((response) => {
       if (response.data.code === 0) {
         fetchTableData();
-        alert(response.data.msg || "提交成功");
+        ElMessage.success(response.data.msg || "提交成功");
       } else {
-        alert(response.data.msg || "提交失败");
+        ElMessage.error(response.data.msg || "提交失败");
       }
     })
     .catch((error) => {
-      alert("提交错误");
+      ElMessage.error("提交错误");
       console.log("提交错误", error);
     })
     .finally(() => {
@@ -163,13 +165,13 @@ const fundModify = async () => {
     .then((response) => {
       if (response.data.code === 0) {
         fetchTableData();
-        alert(response.data.msg || "修改成功");
+        ElMessage.success(response.data.msg || "修改成功");
       } else {
-        alert(response.data.msg || "修改失败");
+        ElMessage.error(response.data.msg || "修改失败");
       }
     })
     .catch((error) => {
-      alert("修改错误");
+      ElMessage.error("修改错误");
       console.log("修改错误", error);
     })
     .finally(() => {
@@ -180,7 +182,7 @@ const fundModify = async () => {
 
 <template>
   <div class="container">
-    <el-table :data="tableData">
+    <el-table :data="tableData" :header-row-class-name="tableRowClassName">
       <el-table-column
         fixed
         label="项目状态"
@@ -196,11 +198,11 @@ const fundModify = async () => {
             width="auto"
           >
             <template #default>
-              <div>状态: {{ scope.row.projecStatus }}</div>
+              <div>状态: {{ scope.row.projectStatus }}</div>
             </template>
             <template #reference>
               <el-tag effect="plain" type="success">{{
-                scope.row.projecStatus
+                scope.row.projectStatus
               }}</el-tag>
             </template>
           </el-popover>
@@ -320,7 +322,7 @@ const fundModify = async () => {
       <el-table-column
         fixed="right"
         label="操作"
-        min-width="110"
+        min-width="150"
         max-width="250"
       >
         <template #default="scope">
@@ -328,7 +330,7 @@ const fundModify = async () => {
             link
             type="primary"
             size="small"
-            v-if="showSubmitButton(scope.row.status, scope.row.projecStatus)"
+            v-if="showSubmitButton(scope.row.status, scope.row.projectStatus)"
             @click="
               submitDialog(
                 scope.row.id,
@@ -362,8 +364,13 @@ const fundModify = async () => {
       </el-table-column>
     </el-table>
   </div>
- <!-- 提交经费 -->
- <el-dialog v-model="centerDialogVisible" title="提交经费" width="500" center>
+  <!-- 提交经费 -->
+  <el-dialog
+    v-model="centerDialogVisibleSubmit"
+    title="提交经费"
+    width="500"
+    center
+  >
     <span> 确认提交？提交后不可修改 </span>
     <template #footer>
       <div class="dialog-footer">
@@ -423,7 +430,7 @@ const fundModify = async () => {
     <template #footer>
       <div class="dialog-footer">
         <el-button @click="centerDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="deleteFundApply()"> 确认 </el-button>
+        <el-button type="danger" @click="deleteFundApply()"> 确认 </el-button>
       </div>
     </template>
   </el-dialog>
@@ -435,6 +442,11 @@ const fundModify = async () => {
   justify-content: center;
   align-items: start;
   background-color: #ffffff;
+}
+
+.el-table >>> .success-row th {
+  background: #525fad !important;
+  color: #fff !important;
 }
 
 .el-table {

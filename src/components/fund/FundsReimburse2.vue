@@ -19,15 +19,18 @@ const mode = ref("1");
 const gotoPage = (number) => {
   mode.value = number;
 };
+
 </script>
   
 <template>
   <div class="container">
     <el-aside :style="{ width: isCollapse ? '64px' : '200px' }" style="background-color: #ffffff;">
-      <el-radio-group v-model="isCollapse" style="margin-bottom: 20px">
+      <!-- <el-radio-group v-model="isCollapse" style="margin-bottom: 20px">
         <el-radio-button :value="false">展开</el-radio-button>
         <el-radio-button :value="true">隐藏</el-radio-button>
-      </el-radio-group>
+      </el-radio-group> -->
+      <el-button @click="isCollapse = !isCollapse"><el-icon><Operation /></el-icon></el-button>
+
       <el-menu
         default-active="1"
         class="el-menu-vertical-demo"
@@ -85,16 +88,17 @@ const gotoPage = (number) => {
   <style>
 .el-menu-vertical-demo:not(.el-menu--collapse) {
   width: 200px;
-  min-height: 400px;
+  /* min-height: 400px; */
+  height: 81vh;
 }
 
 .container {
   display: flex;
   flex-direction: row;
-  height: 93vh;
+  /* height: 93vh; */
 }
-
+/* 
 .el-menu {
   height: 92%;
-}
+} */
 </style>

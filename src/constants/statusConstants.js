@@ -2,8 +2,8 @@
 
 // -------------- 项目管理
 export const projectStatusContant = {
-  STATUS_DRAFT: "草稿",
-  STATUS_SUBMIT: "已提交",
+  STATUS_DRAFT: "预处理",
+  STATUS_SUBMIT: "未处理",
   STATUS_LAUNCHED: "已立项",
   STATUS_REJECTED: "已驳回",
   STATUS_CLOSED: "已结项",
@@ -52,7 +52,7 @@ export const achieveStatusContant = {
   STATUS_DRAFT: "草稿",
   STATUS_SUBMIT: "已提交",
   STATUS_AGREE: "已通过",
-  STATUS_REJECT: "已驳回"
+  STATUS_REJECT: "已拒绝"
 };
 
 export const achieveStatusMap = {

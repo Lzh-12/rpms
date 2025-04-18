@@ -27,3 +27,8 @@ export const updateUserGrantService = (userInfoData) => {
     }
     return sendRequest("put", `/user/${params.get('id')}/grant`, params);
 }
+
+// 获取所有机构信息
+export const getInstitutionsInfo = () => {
+    return sendRequest("get", '/user/institutions');
+}

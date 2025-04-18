@@ -75,16 +75,17 @@ const gotoPage = (number) => {
 <style>
 .el-menu-vertical-demo:not(.el-menu--collapse) {
   width: 200px;
-  min-height: 400px;
+  /* min-height: 400px; */
+  height: 83vh;
 }
 
 .container {
   display: flex;
   flex-direction: row;
-  height: 93vh;
+  /* height: 93vh; */
 }
 
-.el-menu {
+/* .el-menu {
   height: 92%;
-}
+} */
 </style>

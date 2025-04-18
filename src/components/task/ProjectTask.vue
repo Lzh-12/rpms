@@ -10,72 +10,8 @@ import {
   taskStatusMap,
   projectStatusMap,
 } from "@/constants/statusConstants.js";
-
-// 用户id
-// const route = useRoute();
-// const temp = route.query.loginId;
-// const loginId = BigInt(temp);
-// console.log("loginId:", loginId);
-
-// 项目列表数据模型
-// const options = ref([]);
-// 项目列表
-// const fetchOptions = async () => {
-//   projectMy()
-//     .then((response) => {
-//       if (response.data.code === 0) {
-//         // 获取所有项目的id
-//         options.value = response.data.data.map((item) => ({
-//           ...item,
-//           id: BigInt(item.id).toString(),
-//         }));
-//       } else {
-//         alert(response.data.msg || "加载项目失败");
-//       }
-//     })
-//     .catch((error) => {
-//       alert("加载项目错误");
-//       console.log("加载项目错误", error);
-//     });
-// };
-
-// const tableData = ref([]);
-// 提交任务数据模型
-// const taskData = ref({
-//   id: null,
-//   result: "",
-// });
-// const centerDialogVisible = ref(false);
-// // 提交对话框
-// function submit(number) {
-//   taskData.value.id = BigInt(number);
-//   centerDialogVisible.value = true;
-// }
-// const showSubmitButton = (status, id) => {
-//   // “未处理” 状态才能提交 被分配到该任务的成员 才可以对该任务进行提交
-//   return (
-//     status === taskStatusContant.STATUS_UNPROCESSED && BigInt(id) === loginId
-//   );
-// };
-// // 提交任务接口
-// const submitContent = async () => {
-//   submitTask(taskData.value)
-//     .then((response) => {
-//       if (response.data.code === 0) {
-//         getTaskMy();
-//         alert(response.data.msg || "提交成功");
-//       } else {
-//         alert(response.data.msg || "提交失败");
-//       }
-//     })
-//     .catch((error) => {
-//       alert("提交错误");
-//       console.log("提交错误：", error);
-//     })
-//     .finally(() => {
-//       centerDialogVisible.value = false;
-//     });
-// };
+import { ElMessage } from "element-plus";
+import { tableRowClassName } from "@/utils/tableUtils.js";
 
 // 项目编号
 const selectValue = ref(null);
@@ -86,39 +22,6 @@ const formTask = ref({
 watchEffect(() => {
   formTask.value.id = selectValue.value;
 });
-// 获取对应项目的任务列表接口
-// const getTask = async () => {
-//   formTask.value.id = BigInt(formTask.value.id);
-//   getAllTask(formTask.value)
-//     .then((response) => {
-//       if (response.data.code === 0) {
-//         tableData.value = response.data.data.map((item) => ({
-//           ...item,
-//           id: BigInt(item.id).toString(),
-//           projectId: BigInt(item.projectId).toString(),
-//           executorId: BigInt(item.executorId).toString(),
-//           status: taskStatusMap[item.status] || "未知状态",
-//           gmtFinish:
-//             item.gmtFinish === 0 ? "未完成" : convertTimestamp(item.gmtFinish),
-//           gmtCreate: convertTimestamp(item.gmtCreate),
-//           gmtDeadline: convertTimestamp(item.gmtDeadline),
-//           relativeCreate: formatTime(item.gmtCreate).toString(),
-//           relativeFinish:
-//             item.gmtFinish === 0
-//               ? "未完成"
-//               : formatTime(item.gmtFinish).toString(),
-//           relativeDeadline: formatTime(item.gmtDeadline).toString(),
-//         }));
-//         alert(response.data.msg || "查询成功");
-//       } else {
-//         alert(response.data.msg || "查询失败");
-//       }
-//     })
-//     .catch((error) => {
-//       alert("错误");
-//       console.log("查询错误：", error);
-//     });
-// };
 
 const tableData = ref([]);
 // 所有任务列表的接口
@@ -130,8 +33,9 @@ const getTaskMy = async () => {
           ...item,
           id: BigInt(item.id).toString(),
           projectId: BigInt(item.projectId).toString(),
-          projecStatus: projectStatusMap[item.projecStatus],
+          projectStatus: projectStatusMap[item.projectStatus],
           status: taskStatusMap[item.status],
+          result: item.result === "" ? "暂无" : item.result,
           gmtSubmit:
             item.gmtSubmit === 0 ? "未提交" : convertTimestamp(item.gmtSubmit),
           gmtEnsure:
@@ -151,17 +55,16 @@ const getTaskMy = async () => {
           relativeDeadline: formatTime(item.gmtDeadline).toString(),
         }));
       } else {
-        alert(response.data.msg || "查询失败");
+        ElMessage.error(response.data.msg || "查询失败");
       }
     })
     .catch((error) => {
-      alert("查询错误");
+      ElMessage.error("查询错误");
       console.log("查询错误", error);
     });
 };
-// 加载组件时调用 fetchOptions 函数
+
 onMounted(() => {
-  // fetchOptions();
   getTaskMy();
 });
 
@@ -178,16 +81,16 @@ function taskEnsureDialog(id) {
   centerDialogVisibleEnsure.value = true;
 }
 const taskEnsure = async () => {
-  ensureTask()
+  ensureTask(formEnsure.value)
     .then((response) => {
       if (response.data.code === 0) {
         getTaskMy();
       } else {
-        alert(response.data.msg || "确认失败");
+        ElMessage.error(response.data.msg || "确认失败");
       }
     })
     .catch((error) => {
-      alert("确认错误");
+      ElMessage.error("确认错误");
       console.log("确认错误", error);
     })
     .finally(() => {
@@ -197,90 +100,51 @@ const taskEnsure = async () => {
 
 // ------------------------- 完成任务
 const showFinishButton = (status) => {
-  return (status === taskStatusContant.STATUS_SUBMIT ||
-    status === taskStatusContant.STATUS_AGREE);
+  return (
+    status === taskStatusContant.STATUS_SUBMIT ||
+    status === taskStatusContant.STATUS_AGREE
+  );
 };
 const centerDialogVisibleFinish = ref(false);
 const formFinish = ref({
   id: null,
-  content: "",
+  result: "",
 });
 function taskFinishDialog(id) {
   formFinish.value.id = BigInt(id);
   centerDialogVisibleFinish.value = true;
 }
 const taskFinish = async () => {
-  finishTask()
+  finishTask(formFinish.value)
     .then((response) => {
       if (response.data.code === 0) {
+        ElMessage.success(response.data.msg || "提交成功");
         getTaskMy();
       } else {
-        alert(response.data.msg || "提交失败");
+        ElMessage.error(response.data.msg || "提交失败");
       }
     })
     .catch((error) => {
-      alert("提交错误");
+      ElMessage.error("提交错误");
       console.log("提交错误", error);
     })
     .finally(() => {
       centerDialogVisibleFinish.value = false;
-      formFinish.value.content = "";
+      formFinish.value.result = "";
     });
 };
 </script>
 
 <template>
   <div class="container">
-    <!-- 需要完成的任务 -->
-    <!-- <div class="container-task">
-      <div>
-        <el-select
-          v-model="selectValue"
-          placeholder="请选择项目"
-          size="large"
-          style="width: 260px; margin-right: 30px"
-        >
-          <el-option
-            v-for="item in options"
-            :key="item"
-            :label="item.title"
-            :value="item.id"
-          />
-        </el-select>
-        <el-button :icon="Search" circle @click="getTask" />
-      </div>
-      <el-button type="primary" @click="getTaskMy">我的任务</el-button>
-    </div> -->
-
     <div class="container-content">
       <div class="table">
-        <el-table :data="tableData" style="width: 100%">
-          <el-table-column
-            fixed
-            label="任务执行人"
-            min-width="100"
-            max-width="200"
-            show-overflow-tooltip
-          >
-            <template #default="scope">
-              <el-popover
-                effect="light"
-                trigger="hover"
-                placement="top"
-                width="auto"
-              >
-                <template #default>
-                  <div>用户名: {{ scope.row.executorName }}</div>
-                  <div>邮箱: {{ scope.row.executorEmail }}</div>
-                </template>
-                <template #reference>
-                  <el-tag effect="plain" type="success">{{
-                    scope.row.executorName
-                  }}</el-tag>
-                </template>
-              </el-popover>
-            </template>
-          </el-table-column>
+        <el-table
+          :data="tableData"
+          style="width: 100%"
+          stripe
+          :header-row-class-name="tableRowClassName"
+        >
           <el-table-column
             prop="content"
             label="任务内容"
@@ -313,7 +177,7 @@ const taskFinish = async () => {
             </template>
           </el-table-column>
           <el-table-column
-            label="任务创建时间"
+            label="提交时间"
             min-width="180"
             max-width="230"
             show-overflow-tooltip
@@ -326,16 +190,38 @@ const taskFinish = async () => {
                 width="auto"
               >
                 <template #default>
-                  <div>创建时间: {{ scope.row.gmtCreate }}</div>
+                  <div>创建时间: {{ scope.row.gmtSubmit }}</div>
                 </template>
                 <template #reference>
-                  {{ scope.row.relativeCreate }}
+                  {{ scope.row.relativeSubmit }}
                 </template>
               </el-popover>
             </template>
           </el-table-column>
           <el-table-column
-            label="任务完成时间"
+            label="确认时间"
+            min-width="180"
+            max-width="230"
+            show-overflow-tooltip
+          >
+            <template #default="scope">
+              <el-popover
+                effect="light"
+                trigger="hover"
+                placement="top"
+                width="auto"
+              >
+                <template #default>
+                  <div>确认时间: {{ scope.row.gmtEnsure }}</div>
+                </template>
+                <template #reference>
+                  {{ scope.row.relativeEnsure }}
+                </template>
+              </el-popover>
+            </template>
+          </el-table-column>
+          <el-table-column
+            label="完成时间"
             min-width="180"
             max-width="230"
             show-overflow-tooltip
@@ -357,7 +243,7 @@ const taskFinish = async () => {
             </template>
           </el-table-column>
           <el-table-column
-            label="任务截止时间"
+            label="截止时间"
             min-width="180"
             max-width="230"
             show-overflow-tooltip
@@ -445,11 +331,11 @@ const taskFinish = async () => {
         <div
           style="display: flex; align-items: center; justify-content: center"
         >
-          <el-form-item label="任务内容">
+          <el-form-item label="任务结果">
             <el-input
-              v-model="formFinish.content"
+              v-model="formFinish.result"
               type="textarea"
-              style="width: 400px"
+              style="width: 500px"
             />
           </el-form-item>
         </div>
@@ -522,9 +408,14 @@ const taskFinish = async () => {
   margin-top: 30px;
 }
 
-.el-button {
-  margin-right: 100px;
+.el-table >>> .success-row th {
+  background: #525fad !important;
+  color: #fff !important;
 }
+
+/* .el-button {
+  margin-right: 100px;
+} */
 
 .table {
   background-color: #ffffff;

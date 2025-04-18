@@ -5,6 +5,7 @@ import 'element-plus/dist/index.css' // 导入 element-plus的样式
 import locale from 'element-plus/dist/locale/zh-cn.js' // 导入中文
 import router from './router'
 import * as ElementPlusIconsVue from '@element-plus/icons-vue'
+import './assets/index.css' // 导入iconfont样式
 
 // 防抖处理
 const debounce = (callback, delay) => {

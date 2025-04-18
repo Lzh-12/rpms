@@ -13,6 +13,8 @@ import {
   projectStatusMap,
 } from "@/constants/statusConstants.js";
 import { convertTimestamp, formatTime } from "@/utils/timeConverter.js";
+import { ElMessage } from "element-plus";
+import { tableRowClassName } from "@/utils/tableUtils.js";
 
 // 项目标题
 const projectTitle = ref("");
@@ -21,7 +23,12 @@ const tableData = ref([]);
 // 查询项目
 const searchProjects = () => {
   if (!projectTitle.value) {
-    alert("请选择项目");
+    // ElMessage.warning("请选择项目");
+    if (activeIndex.value === "1") {
+      fetchProjects();
+    } else {
+      getUnapprovedProjects();
+    }
     return;
   }
   const matchedItem = table.value.find(
@@ -31,7 +38,7 @@ const searchProjects = () => {
     tableData.value = [matchedItem];
   } else {
     console.log("未找到匹配的项目");
-    alert("未找到该项目");
+    ElMessage.error("未找到该项目");
   }
   projectTitle.value = "";
 };
@@ -99,10 +106,11 @@ const fetchProjects = async () => {
         }));
         tableData.value = table.value;
       } else {
-        alert(response.data.msg || "加载失败");
+        ElMessage.error(response.data.msg || "加载失败");
       }
     })
     .catch((error) => {
+      ElMessage.error("加载错误");
       console.error("获取项目数据失败:", error);
     });
 };
@@ -126,24 +134,27 @@ const getUnapprovedProjects = async () => {
           reviewerId: BigInt(item.reviewerId).toString(),
           status: projectStatusMap[item.status],
           gmtSubmit: convertTimestamp(item.gmtSubmit),
-          gmtReview: item.gmtReview === 0 ? "未审核" : convertTimestamp(item.gmtReview),
-          relativeSubmit: formatTime(item.gmtReview), 
-          relativeReview: item.gmtReview === 0 ? "未审核" : formatTime(item.gmtReview).toString(),
+          gmtReview:
+            item.gmtReview === 0 ? "未审核" : convertTimestamp(item.gmtReview),
+          relativeSubmit: formatTime(item.gmtSubmit).toString(),
+          relativeReview:
+            item.gmtReview === 0
+              ? "未审核"
+              : formatTime(item.gmtReview).toString(),
         }));
         tableData.value = table.value;
       } else {
-        alert(response.data.msg || "加载失败");
+        ElMessage.error(response.data.msg || "加载失败");
       }
     })
     .catch((error) => {
-      alert("加载错误");
+      ElMessage.error("加载错误");
       console.log("加载错误", error);
     });
 };
 
 // 获取项目详情的函数
 function getDetail(number) {
-  console.log(number);
   router.push(`/admin/project/my/detail/${number}`);
 }
 
@@ -181,14 +192,14 @@ const getMemberProject = async () => {
           ...item,
           id: BigInt(item.id),
         }));
-        alert(response.data.msg || "查看成功");
+        // ElMessage.success(response.data.msg || "查看成功");
       } else {
-        alert(response.data.msg || "查看失败");
+        ElMessage.error(response.data.msg || "查看失败");
       }
     })
     .catch((error) => {
       console.error("查看发生错误:", error);
-      alert("查看发生错误");
+      ElMessage.error("查看发生错误");
     });
 };
 
@@ -199,9 +210,11 @@ const formReview = ref({
   approved: true,
   content: "",
 });
-const reviewDialog = (id) => {
+const reviewTitle = ref("");
+const reviewDialog = (id, title) => {
   formReview.value.id = BigInt(id); // 项目id
-  formReview.value.approved = true;
+  // formReview.value.approved = true;
+  reviewTitle.value = title;
   centerDialogVisibleReview.value = true;
 };
 // 审核项目接口
@@ -212,20 +225,21 @@ const reviewProject = async () => {
       if (response.data.code === 0) {
         // currentPage.value = 1;
         fetchProjects();
-        alert(response.data.msg || "审核成功");
+        ElMessage.success(response.data.msg || "审核成功");
       } else {
-        alert(response.data.msg || "审核失败");
+        ElMessage.error(response.data.msg || "审核失败");
       }
     })
     .catch((error) => {
       console.error("审核发生错误:", error);
-      alert("审核发生错误");
+      ElMessage.error("审核发生错误");
     })
     .finally(() => {
       centerDialogVisibleReview.value = false;
       formReview.value.id = null;
       formReview.value.approved = true;
       formReview.value.content = "";
+      reviewTitle.value = "";
     });
 };
 
@@ -237,23 +251,46 @@ const selectedOption = ref(option.value[0]);
 
 // 监听选中值的变化
 watch(selectedOption, () => {
+  console.log(selectedOption.value);
   if (selectedOption.value === "同意") {
     formReview.value.approved = true;
   } else {
     formReview.value.approved = false;
   }
 });
+
+const activeIndex = ref("1");
+const handleSelect = (key) => {
+  if (key === "1") {
+    getUnapprovedProjects();
+  } else if (key === "2") {
+    fetchProjects();
+  }
+  activeIndex.value = key;
+};
 </script>
 
 <template>
   <!-- 项目管理 - 项目申报 -->
   <div class="container">
+    <el-menu
+      :default-active="activeIndex"
+      class="el-menu-demo"
+      mode="horizontal"
+      @select="handleSelect"
+    >
+      <el-menu-item index="1">未通过</el-menu-item>
+      <el-menu-item index="2">已立项</el-menu-item>
+    </el-menu>
+
     <div class="container-find">
-      <label for="" class="container-find-label">项目标题</label>
+      <label for="" class="container-find-label" style="margin-left: 20px"
+        >项目</label
+      >
       <el-select
         v-model="projectTitle"
         placeholder="请选择项目"
-        size="large"
+        clearable
         style="width: 260px; margin-right: 40px"
       >
         <el-option
@@ -266,14 +303,24 @@ watch(selectedOption, () => {
       <el-button type="primary" :icon="Search" @click="searchProjects"
         >查询</el-button
       >
-      <el-button @click="fetchProjects">已通过的项目</el-button>
-      <el-button @click="getUnapprovedProjects">未通过的项目</el-button>
+      <!-- <el-button type="success" :icon="Check" @click="fetchProjects"
+        >已立项</el-button
+      >
+      <el-button type="danger" :icon="Message" @click="getUnapprovedProjects"
+        >已驳回</el-button
+      > -->
     </div>
     <!-- 展示申报的项目 -->
     <div class="container-show">
       <!-- 申报项目展示-->
       <div class="container-show-content">
-        <el-table :data="tableData" style="width: 100%; margin-bottom: 50px">
+        <el-table
+          :data="tableData"
+          stripe
+          border
+          style="width: 100%; margin-bottom: 50px"
+          :header-row-class-name="tableRowClassName"
+        >
           <el-table-column
             fixed
             prop="title"
@@ -332,7 +379,7 @@ watch(selectedOption, () => {
             </template>
           </el-table-column>
           <el-table-column
-            v-if="showMode.value"
+            v-if="showMode"
             prop="budget"
             label="项目预算"
             min-width="100"
@@ -384,14 +431,20 @@ watch(selectedOption, () => {
               </el-popover>
             </template>
           </el-table-column>
-          <el-table-column
+          <!-- <el-table-column
             prop="reviewContent"
             label="审核内容"
             min-width="100"
             max-width="220"
             show-overflow-tooltip
-          />
-          <el-table-column prop="gmtConclude" label="结项时间" min-width="150" max-width="250" v-if="showMode.value">
+          /> -->
+          <el-table-column
+            prop="gmtConclude"
+            label="结项时间"
+            min-width="150"
+            max-width="250"
+            v-if="showMode"
+          >
             <template #default="scope">
               <el-popover
                 effect="light"
@@ -411,7 +464,7 @@ watch(selectedOption, () => {
             </template>
           </el-table-column>
           <el-table-column
-            v-if="showMode.value"
+            v-if="showMode"
             prop="taskNum"
             label="任务数"
             min-width="100"
@@ -419,7 +472,7 @@ watch(selectedOption, () => {
             show-overflow-tooltip
           />
           <el-table-column
-            v-if="showMode.value"
+            v-if="showMode"
             prop="memberNum"
             label="成员数"
             min-width="100"
@@ -427,7 +480,7 @@ watch(selectedOption, () => {
             show-overflow-tooltip
           />
           <el-table-column
-            v-if="showMode.value"
+            v-if="showMode"
             prop="achieveNum"
             label="成果数"
             min-width="100"
@@ -435,7 +488,7 @@ watch(selectedOption, () => {
             show-overflow-tooltip
           />
           <el-table-column
-            v-if="showMode.value"
+            v-if="showMode"
             prop="fundNum"
             label="总花费"
             min-width="100"
@@ -468,7 +521,7 @@ watch(selectedOption, () => {
                 type="primary"
                 size="small"
                 v-if="showReviewButton(scope.row.status)"
-                @click="reviewDialog(scope.row.id)"
+                @click="reviewDialog(scope.row.id, scope.row.title)"
                 >审核</el-button
               >
             </template>
@@ -547,6 +600,10 @@ watch(selectedOption, () => {
     >
       <div style="display: flex; flex-direction: column">
         <div style="display: flex; flex-direction: row; margin-bottom: 30px">
+          <label for="" style="margin-right: 40px">项目名称</label>
+          <label for="">{{ reviewTitle }}</label>
+        </div>
+        <div style="display: flex; flex-direction: row; margin-bottom: 30px">
           <label for="" style="margin-right: 40px">审核意见</label>
           <div>
             <label v-for="(value, index) in option" :key="index">
@@ -586,7 +643,7 @@ watch(selectedOption, () => {
 .container-find {
   display: flex;
   flex-direction: row;
-  justify-content: center;
+  /* justify-content: center; */
   align-items: center;
   height: 90px;
   margin-bottom: 10px;
@@ -620,6 +677,12 @@ watch(selectedOption, () => {
 .el-table-column {
   width: 20%;
 }
+
+.el-table >>> .success-row th {
+  background: #525fad !important;
+  color: #fff !important;
+}
+
 /* 媒体查询：当屏幕宽度小于 768px 时 */
 @media screen and (max-width: 768px) {
   .el-table {

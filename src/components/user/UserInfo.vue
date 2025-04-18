@@ -2,6 +2,7 @@
 import { ref, onMounted } from "vue";
 import { Edit } from "@element-plus/icons-vue";
 import { getUserInfoService, updateUserInfoService } from "@/api/user/index.js";
+import { ElMessage } from "element-plus";
 
 // ------------- 查询用户信息模型
 const id = ref(null);
@@ -10,7 +11,7 @@ const name = ref("");
 const phone = ref("");
 const qq = ref("");
 const wechat = ref("");
-const institution = ref("");
+const institution = ref(null);
 
 // 从后端获取数据的函数
 const fetchUserData = async () => {
@@ -18,14 +19,18 @@ const fetchUserData = async () => {
     .then((response) => {
       if (response.data.code === 0) {
         id.value = response.data.data.id;
-        email.value = response.data.data.email;
-        name.value = response.data.data.name;
         phone.value = response.data.data.phone;
+        qq.value = response.data.data.qq;
+        wechat.value = response.data.data.wechat;
+        institution.value = response.data.data.institution;
+        name.value = response.data.data.name;
+        email.value = response.data.data.email;
       } else {
-        alert(response.data.msg || "获取用户数据失败");
+        ElMessage.error(response.data.msg || "获取用户数据失败");
       }
     })
     .catch((error) => {
+      ElMessage.error("获取用户数据失败");
       console.log("加载错误", error);
     });
 };
@@ -39,114 +44,178 @@ const centerDialogVisible = ref(false);
 // 修改按钮点击事件
 const toggleEdit = () => {
   centerDialogVisible.value = !centerDialogVisible.value; // 切换编辑状态
+  userInfoForm.value.name = name.value;
+  userInfoForm.value.phone = phone.value;
+  userInfoForm.value.qq = qq.value;
+  userInfoForm.value.wechat = wechat.value;
+  userInfoForm.value.institution = institution.value;
+  for (let i = 0; i < institutionList.length; i++) {
+    if (institutionList[i].name === institution.value) {
+      userInfoForm.value.institution = institutionList[i].id;
+      break;
+    }
+  }
 };
 
 // ------------- 用户信息模型
-const userInfoData = ref({
+const userInfoForm = ref({
   name: "",
   phone: "",
+  qq: "",
+  wechat: "",
+  institution: null,
 });
 
 const rules = {
   name: [{ required: false, message: "请输入用户名", trigger: "blur" }],
   phone: [
-    { required: false, message: "请输入手机号", trigger: "blur" },
-    { pattern: /^1[3-9]\d{9}$/, message: "手机号格式不正确", trigger: "blur" },
+    {
+      required: false,
+      pattern: /^1[3-9]\d{9}$/,
+      message: "手机号格式不正确",
+      trigger: "blur",
+    },
+  ],
+  qq: [{ required: false, message: "请输入QQ号", trigger: "blur" }],
+  wechat: [{ required: false, message: "请输入微信号", trigger: "blur" }],
+  institution: [
+    { required: false, message: "请选择所属机构", trigger: "change" },
   ],
 };
 
 // 更新用户信息接口
 const updateInfo = async () => {
-  if (!userInfoData.value.name && !userInfoData.value.phone) {
-    alert("请输入用户名或者手机号");
-    return;
-  }
-
-  // 验证手机号格式
-  if (
-    userInfoData.value.phone &&
-    !/^1[3-9]\d{9}$/.test(userInfoData.value.phone)
-  ) {
-    alert("请输入正确的手机号格式");
-    return;
-  }
-  updateUserInfoService(userInfoData.value)
+  updateUserInfoService(userInfoForm.value)
     .then((response) => {
       if (response.data.code === 0) {
         fetchUserData(); // 获取后端数据
+        ElMessage.success(response.data.msg || "更新成功");
       } else {
-        alert(response.data.msg || "更新失败");
+        ElMessage.error(response.data.msg || "更新失败");
       }
     })
     .catch((error) => {
-      alert("更新错误");
+      ElMessage.error("更新错误");
       console.log("更新错误", error);
     })
     .finally(() => {
       centerDialogVisible.value = false;
+      (userInfoForm.value.name = ""),
+        (userInfoForm.value.phone = ""),
+        (userInfoForm.value.qq = ""),
+        (userInfoForm.value.wechat = ""),
+        (userInfoForm.value.institution = null);
     });
 };
+
+// 机构
+const institutionList = JSON.parse(localStorage.getItem("institution"));
 </script>
 
 <template>
   <div class="container">
-    <div class="container-card">
-      <label for="" class="container-card-label">编号</label>
-      <el-input v-model="id" style="width: 80%" disabled />
-    </div>
-    <div class="container-card">
-      <label for="" class="container-card-label">邮箱</label>
-      <el-input v-model="email" style="width: 80%" disabled />
-    </div>
-    <div class="container-card">
-      <label for="" class="container-card-label">用户名</label>
-      <el-input v-model="name" style="width: 80%" disabled />
-    </div>
-    <div class="container-card">
-      <label for="" class="container-card-label">手机号</label>
-      <el-input v-model="phone" style="width: 80%" disabled />
-    </div>
-    <div class="container-card">
-      <label for="" class="container-card-label">QQ号</label>
-      <el-input v-model="qq" style="width: 80%" disabled />
-    </div>
-    <div class="container-card">
-      <label for="" class="container-card-label">微信号</label>
-      <el-input v-model="wechat" style="width: 80%" disabled />
-    </div>
-    <div class="container-card">
-      <label for="" class="container-card-label">所属机构</label>
-      <el-input v-model="institution" style="width: 80%" disabled />
-    </div>
-    <div class="container-button">
-      <el-button type="primary" :icon="Edit" circle @click="toggleEdit" />
+    <div class="container-content">
+      <div class="container-card">
+        <label for="" style="font-size: 24px; font-weight: bold"
+          >基本信息</label
+        >
+      </div>
+      <div class="container-card">
+        <div>
+          <el-icon><Message /></el-icon>
+          <label for="" style="margin-left: 10px; font-weight: bold"
+            >邮箱</label
+          >
+        </div>
+        <label for="">{{ email }}</label>
+      </div>
+      <div class="container-card">
+        <div>
+          <el-icon><User /></el-icon>
+          <label for="" style="margin-left: 10px; font-weight: bold"
+            >用户名</label
+          >
+        </div>
+        <label for="">{{ name }}</label>
+      </div>
+      <div class="container-card">
+        <div>
+          <el-icon><Cellphone /></el-icon>
+          <label for="" style="margin-left: 10px; font-weight: bold"
+            >手机号</label
+          >
+        </div>
+        <label for="">{{ phone }}</label>
+      </div>
+      <div class="container-card">
+        <div>
+          <el-icon><Message /></el-icon>
+          <label for="" style="margin-left: 10px; font-weight: bold"
+            >QQ号</label
+          >
+        </div>
+        <label for="">{{ qq }}</label>
+      </div>
+      <div class="container-card">
+        <div>
+          <el-icon><CollectionTag /></el-icon>
+          <label for="" style="margin-left: 10px; font-weight: bold"
+            >微信号</label
+          >
+        </div>
+        <label for="">{{ wechat }}</label>
+      </div>
+      <div class="container-card">
+        <div>
+          <el-icon><House /></el-icon>
+          <label for="" style="margin-left: 10px; font-weight: bold"
+            >所属机构</label
+          >
+        </div>
+        <label for="">{{ institution }}</label>
+      </div>
+      <div class="container-button">
+        <el-button type="primary" :icon="Edit" circle @click="toggleEdit" />
+      </div>
     </div>
   </div>
   <!-- 提示框 -->
   <el-dialog
     v-model="centerDialogVisible"
     title="修改个人信息"
-    width="500"
+    min-width="400"
+    max-width="800"
     center
   >
-    <el-form :model="userInfoData" :rules="rules" ref="userInfoForm">
-      <div class="container-dialog">
-        <label for="" class="container-dialog-label">用户名</label>
-        <el-input
-          v-model="userInfoData.name"
-          style="width: 80%"
-          placeholder="请输入用户名"
-        />
-      </div>
-      <div class="container-dialog">
-        <label for="" class="container-dialog-label">手机号</label>
-        <el-input
-          v-model="userInfoData.phone"
-          style="width: 80%"
-          placeholder="请输入手机号"
-        />
-      </div>
-    </el-form>
+    <div style="display: flex; align-items: center; justify-content: center;">
+      <el-form :model="userInfoForm" :rules="rules" label-width="auto" style="width: 70%;">
+        <el-form-item label="用户名" prop="name">
+          <el-input v-model="userInfoForm.name" clearable />
+        </el-form-item>
+        <el-form-item label="手机号" prop="phone">
+          <el-input v-model="userInfoForm.phone" clearable />
+        </el-form-item>
+        <el-form-item label="QQ号" prop="qq">
+          <el-input v-model="userInfoForm.qq" clearable />
+        </el-form-item>
+        <el-form-item label="微信号" prop="wechat">
+          <el-input v-model="userInfoForm.wechat" clearable />
+        </el-form-item>
+        <el-form-item label="所属机构" prop="institution">
+          <el-select
+            v-model="userInfoForm.institution"
+            placeholder="请选择所属机构"
+          >
+            <el-option
+              v-for="item in institutionList"
+              :key="item.id"
+              :label="item.name"
+              :value="item.id"
+            />
+          </el-select>
+        </el-form-item>
+      </el-form>
+    </div>
     <template #footer>
       <div class="dialog-footer">
         <el-button @click="centerDialogVisible = false">取消</el-button>
@@ -159,21 +228,34 @@ const updateInfo = async () => {
 <style scoped>
 .container {
   background-color: #ffffff;
-  /* height: 93vh; */
+  /* height: 80vh; */
   display: flex;
   flex-direction: column;
   align-items: center;
+  /* justify-content: center; */
+}
+
+.container-content {
+  width: 70%;
+  border: 2px solid #f0e6e6;
+  padding: 20px;
+  margin-top: 30px;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+  background: linear-gradient(
+    to bottom,
+    rgba(230, 250, 255, 0.8),
+    rgba(255, 255, 255, 0.8)
+  ); /* 渐变色 */
 }
 
 .container-card {
   display: flex;
   flex-direction: row;
   justify-content: space-between;
-  width: 50%;
-  padding-bottom: 20px;
-  margin-top: 10px;
-  margin-bottom: 30px;
+  /* width: 60%; */
+  /* border: 2px solid #f0e6e6; */
   border-bottom: 2px solid #f0e6e6;
+  padding: 20px;
 }
 
 .container-button {

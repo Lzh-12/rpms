@@ -7,6 +7,7 @@ import {
   projectStatusMap,
 } from "@/constants/statusConstants.js";
 import { convertTimestamp, formatTime } from "@/utils/timeConverter.js";
+import { ElMessage } from "element-plus";
 
 // 表格数据
 const tableData = ref([]);
@@ -24,19 +25,20 @@ const reviewDialog = async (id) => {
 };
 const reviewFundApply = async () => {
   if (!formReview.value.content) {
-    alert("请输入审核内容");
+    ElMessage.warning("请输入审核内容");
     return;
   }
   reviewFund(formReview.value)
     .then((response) => {
       if (response.data.code === 0) {
-        alert(response.data.msg || "审核成功");
+        ElMessage.success(response.data.msg || "审核成功");
+        searchAll();
       } else {
-        alert(response.data.msg || "审核失败");
+        ElMessage.error(response.data.msg || "审核失败");
       }
     })
     .catch((error) => {
-      alert("审核错误");
+      ElMessage.error("审核错误");
       console.log("审核错误", error);
     })
     .finally(() => {
@@ -50,6 +52,10 @@ const form = ref({
 });
 // 项目已提交的经费列表的接口
 const searchAll = async () => {
+  if(!form.value.id){
+    ElMessage.warning("请先选择项目");
+    return;
+  }
   projectAllFund(form.value)
     .then((response) => {
       if (response.data.code === 0) {
@@ -57,7 +63,7 @@ const searchAll = async () => {
           ...item,
           id: BigInt(item.id).toString(),
           projectId: BigInt(item.projectId).toString(),
-          projecStatus: projectStatusMap[item.projecStatus],
+          projectStatus: projectStatusMap[item.projectStatus],
           expenserId: BigInt(item.expenserId).toString(),
           figure: BigInt(item.figure).toString(),
           status: fundStatusMap[item.status],
@@ -70,13 +76,13 @@ const searchAll = async () => {
               ? "未审核"
               : formatTime(item.gmtReview).toString(),
         }));
-        alert(response.data.msg || "查询成功");
+        // ElMessage.success(response.data.msg || "查询成功");
       } else {
-        alert(response.data.msg || "查询失败");
+        ElMessage.error(response.data.msg || "查询失败");
       }
     })
     .catch((error) => {
-      alert("查询错误");
+      ElMessage.error("查询错误");
       console.log("查询错误", error);
     });
 };
@@ -92,11 +98,11 @@ const fetchOptions = async () => {
           id: BigInt(item.id).toString(),
         }));
       } else {
-        alert(response.data.msg || "加载项目失败");
+        ElMessage.error(response.data.msg || "加载项目失败");
       }
     })
     .catch((error) => {
-      alert("加载项目错误");
+      ElMessage.error("加载项目错误");
       console.log("加载项目错误", error);
     });
 };
@@ -117,7 +123,7 @@ onMounted(() => {
 <template>
   <div class="container">
     <div class="container-title">
-      <el-form-item label="项目标题">
+      <el-form-item label="项目">
         <el-select v-model="form.id" placeholder="请选择项目">
           <el-option
             v-for="item in options"
@@ -132,7 +138,7 @@ onMounted(() => {
       >
     </div>
     <div class="table">
-      <el-table :data="tableData">
+      <el-table :data="tableData" stripe>
         <el-table-column
           fixed
           label="经费申请人"
@@ -173,11 +179,11 @@ onMounted(() => {
               width="auto"
             >
               <template #default>
-                <div>状态: {{ scope.row.projecStatus }}</div>
+                <div>状态: {{ scope.row.projectStatus }}</div>
               </template>
               <template #reference>
                 <el-tag effect="plain" type="success">{{
-                  scope.row.projecStatus
+                  scope.row.projectStatus
                 }}</el-tag>
               </template>
             </el-popover>
@@ -283,6 +289,7 @@ onMounted(() => {
               link
               type="primary"
               size="small"
+              v-if="scope.row.status === '已提交'"
               @click="reviewDialog(scope.row.id, scope.row.status)"
             >
               审核

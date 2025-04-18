@@ -15,12 +15,13 @@ export const formatTime = (gmtDate) => {
         diffInDays = Math.floor((t - now) / (24 * 60 * 60 * 1000));
         if (diffInDays < 1) {
             // 计算时间差（单位：小时）
-            const diffInHours = Math.floor((now - t) / (60 * 60 * 1000));
+            const diffInHours = Math.floor((t - now) / (60 * 60 * 1000));
             // 一天之内
             if (diffInHours <= 0) {
                 // 一小时内
                 // 计算时间差（单位：分钟）
-                const diffInMinutes = Math.floor((now - t) / (60 * 1000));
+                const diffInMinutes = Math.floor((t - now) / (60 * 1000));
+
                 return `${diffInMinutes}分钟后`;
             } else {
                 return `${diffInHours}小时后`;
@@ -45,14 +46,18 @@ export const formatTime = (gmtDate) => {
         // 计算时间差（单位：小时）
         const diffInHours = Math.floor((now - t) / (60 * 60 * 1000));
         // 一天之内
-        if (diffInHours <= 0) {
+        if (diffInHours <= 0) { 
             // 一小时内
             // 计算时间差（单位：分钟）
             const diffInMinutes = Math.floor((now - t) / (60 * 1000));
+            if(diffInMinutes <= 0) {
+                // 一分钟内
+                const diffInSeconds = Math.floor((now - t) / (1 * 1000));
+                return `${diffInSeconds}秒前`;
+            }
             return `${diffInMinutes}分钟前`;
-        } else {
-            return `${diffInHours}小时前`;
         }
+        return `${diffInHours}小时前`;
     } else if (diffInDays < 7) {
         // 一周之内
         return `${diffInDays}天前`;

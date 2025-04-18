@@ -3,8 +3,10 @@ import { ref, onMounted } from "vue";
 import { Search } from "@element-plus/icons-vue";
 import { projectApproedFund } from "@/api/fund/index.js";
 import { projectMy } from "@/api/project/index.js";
-import { fundStatusMap } from "@/constants/statusConstants.js";
+// import { fundStatusMap } from "@/constants/statusConstants.js";
 import { convertTimestamp, formatTime } from "@/utils/timeConverter.js";
+import { ElMessage } from "element-plus";
+import { tableRowClassName } from "@/utils/tableUtils.js";
 
 // 项目编号
 const options = ref([]);
@@ -18,11 +20,11 @@ const fetchOptions = async () => {
           id: BigInt(item.id).toString(),
         }));
       } else {
-        alert(response.data.msg || "加载项目失败");
+        ElMessage.error(response.data.msg || "加载项目失败");
       }
     })
     .catch((error) => {
-      alert("加载项目错误");
+      ElMessage.error("加载项目错误");
       console.log("加载项目错误", error);
     });
 };
@@ -47,38 +49,44 @@ const form = ref({
 });
 // 项目已通过的经费列表的接口
 const searchApproved = async () => {
+  // form.value.id = BigInt(form.value.id);
+  if (!form.value.id) {
+    ElMessage.warning("请选择项目");
+    return;
+  }
   projectApproedFund(form.value)
     .then((response) => {
       if (response.data.code === 0) {
         tableData.value = response.data.data.map((item) => ({
           ...item,
           id: BigInt(item.id).toString(),
-          projectId: BigInt(item.projectId).toString(),
+          // projectId: BigInt(item.projectId).toString(),
           expenserId: BigInt(item.expenserId).toString(),
           figure: BigInt(item.figure).toString(),
-          status: fundStatusMap[item.status],
-          gmtCreate: convertTimestamp(item.gmtCreate),
-          gmtModify:
-            item.gmtModify === 0 ? "未修改" : convertTimestamp(item.gmtModify),
+          type: item.type,
+          // status: fundStatusMap[item.status],
+          // gmtCreate: convertTimestamp(item.gmtCreate),
+          // gmtModify:
+          //   item.gmtModify === 0 ? "未修改" : convertTimestamp(item.gmtModify),
           gmtReview:
             item.gmtReview === 0 ? "未审核" : convertTimestamp(item.gmtReview),
-          relativeCreate: formatTime(item.gmtCreate).toString(),
-          relativeModify:
-            item.gmtModify === 0
-              ? "未修改"
-              : formatTime(item.gmtModify).toString(),
+          // relativeCreate: formatTime(item.gmtCreate).toString(),
+          // relativeModify:
+          //   item.gmtModify === 0
+          //     ? "未修改"
+          //     : formatTime(item.gmtModify).toString(),
           relativeReview:
             item.gmtReview === 0
               ? "未审核"
               : formatTime(item.gmtReview).toString(),
         }));
-        alert(response.data.msg || "查询成功");
+        // ElMessage.success(response.data.msg || "查询成功");
       } else {
-        alert(response.data.msg || "查询失败");
+        ElMessage.error(response.data.msg || "查询失败");
       }
     })
     .catch((error) => {
-      alert("查询错误");
+      ElMessage.error("查询错误");
       console.log("查询错误", error);
     });
 };
@@ -87,7 +95,7 @@ const searchApproved = async () => {
 <template>
   <div class="container">
     <div class="container-title">
-      <el-form-item label="项目标题">
+      <el-form-item label="项目">
         <el-select v-model="form.id" placeholder="请选择项目">
           <el-option
             v-for="item in options"
@@ -107,7 +115,11 @@ const searchApproved = async () => {
     </div>
 
     <div class="table">
-      <el-table :data="tableData">
+      <el-table
+        :data="tableData"
+        stripe
+        :header-row-class-name="tableRowClassName"
+      >
         <el-table-column
           fixed
           label="经费申请人"
@@ -148,7 +160,7 @@ const searchApproved = async () => {
           max-width="220"
           show-overflow-tooltip
         />
-        <el-table-column prop="status" label="经费状态" width="100">
+        <!-- <el-table-column prop="type" label="经费状态" width="100">
           <template #default="scope">
             <el-popover
               effect="light"
@@ -158,14 +170,14 @@ const searchApproved = async () => {
             >
               <template #default>
                 <div>内容: {{ scope.row.figure }}</div>
-                <div>状态: {{ scope.row.status }}</div>
+                <div>状态: {{ scope.row.type }}</div>
               </template>
               <template #reference>
-                <el-tag>{{ scope.row.status }}</el-tag>
+                <el-tag>{{ scope.row.type }}</el-tag>
               </template>
             </el-popover>
           </template>
-        </el-table-column>
+        </el-table-column> -->
         <el-table-column
           prop="type"
           label="经费类型"
@@ -173,7 +185,7 @@ const searchApproved = async () => {
           max-widt="220"
           show-overflow-tooltip
         />
-        <el-table-column
+        <!-- <el-table-column
           label="创建时间"
           min-width="140"
           max-width="230"
@@ -194,8 +206,8 @@ const searchApproved = async () => {
               </template>
             </el-popover>
           </template>
-        </el-table-column>
-        <el-table-column
+        </el-table-column> -->
+        <!-- <el-table-column
           label="修改时间"
           min-width="140"
           max-width="230"
@@ -216,7 +228,7 @@ const searchApproved = async () => {
               </template>
             </el-popover>
           </template>
-        </el-table-column>
+        </el-table-column> -->
         <el-table-column
           prop="gmtReview"
           label="审核时间"
@@ -240,6 +252,13 @@ const searchApproved = async () => {
             </el-popover>
           </template>
         </el-table-column>
+        <el-table-column
+          prop="reviewContent"
+          label="审核内容"
+          min-width="140"
+          max-width="250"
+          show-overflow-tooltip
+        />
       </el-table>
     </div>
   </div>
@@ -286,6 +305,10 @@ const searchApproved = async () => {
   padding-bottom: 20px;
 }
 
+.el-table >>> .success-row th {
+  background: #525fad !important;
+  color: #fff !important;
+}
 /* @media screen and (min-width: 1500px) {
   .el-table {
     width: 80%;

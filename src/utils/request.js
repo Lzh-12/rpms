@@ -4,8 +4,8 @@ import { reactive } from 'vue';
 
 // 创建 axios 实例
 export const instance = axios.create({
-  baseURL: "https://srpms.forye.top",
-  // timeout: 5000,
+  // baseURL: "https://srpms.forye.top/api",
+  baseURL: "https://api.srpms.forye.top",
 });
 export {instance as request}  
 
@@ -40,8 +40,8 @@ export const tokenObj = reactive({
 
 export const sendRequest = async(method, path, data = null, headers = {}) => {
   let rheaders = {...headers}
-  rheaders[tokenObj.tokenName] = tokenObj.tokenValue
-  console.log("token",tokenObj.tokenName, tokenObj.tokenValue )
+  rheaders['satoken'] = JSON.parse(sessionStorage.getItem("satoken"));
+  console.log("token",tokenObj.tokenName, tokenObj.tokenValue)
   const config = {
       method: method,
       url: path,

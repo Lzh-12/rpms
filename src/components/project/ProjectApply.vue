@@ -2,16 +2,11 @@
 import { ref, onMounted, watch } from "vue";
 import router from "@/router";
 import { projectMy, projectMembers } from "@/api/project/index.js";
-import { useRoute } from "vue-router";
-import { Search } from "@element-plus/icons-vue";
+import { Search, Share } from "@element-plus/icons-vue";
 import { projectStatusMap } from "@/constants/statusConstants.js";
 import { convertTimestamp, formatTime } from "@/utils/timeConverter.js";
-
-// 用户id
-const route = useRoute();
-const temp = route.query.loginId;
-const loginId = BigInt(temp);
-console.log("loginId:", loginId);
+import { ElMessage } from "element-plus";
+import { tableRowClassName } from "@/utils/tableUtils.js";
 
 // 项目标题
 const projectTitle = ref("");
@@ -21,7 +16,7 @@ const tableData = ref([]);
 // 查询项目
 const searchProjects = () => {
   if (!projectTitle.value) {
-    alert("请选择项目");
+    ElMessage.warning("请选择项目");
     return;
   }
   const matchedItem = table.value.find(
@@ -31,7 +26,7 @@ const searchProjects = () => {
     tableData.value = [matchedItem];
   } else {
     console.log("未找到匹配的项目");
-    alert("未找到该项目");
+    ElMessage.error("未找到该项目");
   }
   projectTitle.value = "";
 };
@@ -77,7 +72,7 @@ const fetchProjects = async () => {
         }));
         tableData.value = table.value; // 显示在页面的数据
       } else {
-        alert(response.data.msg || "加载失败");
+        ElMessage.error(response.data.msg || "加载失败");
       }
     })
     .catch((error) => {
@@ -122,12 +117,12 @@ const getMemberProject = async () => {
           id: BigInt(item.id),
         }));
       } else {
-        alert(response.data.msg || "查看失败");
+        ElMessage.error(response.data.msg || "查看失败");
       }
     })
     .catch((error) => {
       console.error("查看发生错误:", error);
-      alert("查看发生错误");
+      ElMessage.error("查看发生错误");
     })
     .finally(() => {
       centerDialogVisibleMember.value = true;
@@ -139,11 +134,13 @@ const getMemberProject = async () => {
   <!-- 项目管理 - 项目申报 -->
   <div class="container">
     <div class="container-find">
-      <label for="" class="container-find-label">项目标题</label>
+      <label for="" class="container-find-label" style="margin-left: 20px"
+        >项目</label
+      >
       <el-select
         v-model="projectTitle"
         placeholder="请选择项目"
-        size="large"
+        clearable
         style="width: 260px; margin-right: 40px"
       >
         <el-option
@@ -156,14 +153,22 @@ const getMemberProject = async () => {
       <el-button type="primary" :icon="Search" @click="searchProjects()"
         >查询</el-button
       >
-      <el-button @click="fetchProjects">全部</el-button>
+      <el-button type="info" :icon="Share" @click="fetchProjects"
+        >全部</el-button
+      >
     </div>
 
     <!-- 展示申报的项目 -->
     <div class="container-show">
       <!-- 申报项目展示-->
       <div class="container-show-content">
-        <el-table :data="tableData" style="margin-bottom: 60px">
+        <el-table
+          :data="tableData"
+          style="margin-bottom: 60px"
+          stripe
+          border
+          :header-row-class-name="tableRowClassName"
+        >
           <el-table-column
             fixed
             prop="title"
@@ -200,8 +205,13 @@ const getMemberProject = async () => {
               </el-popover>
             </template>
           </el-table-column>
-          <el-table-column prop="status" label="状态" class-name="status" min-width="90"
-            max-width="160">
+          <el-table-column
+            prop="status"
+            label="状态"
+            class-name="status"
+            min-width="90"
+            max-width="160"
+          >
             <template #default="scope">
               <el-popover
                 effect="light"
@@ -219,7 +229,7 @@ const getMemberProject = async () => {
               </el-popover>
             </template>
           </el-table-column>
-          <el-table-column
+          <!-- <el-table-column
             label="创建时间"
             class-name="time"
             min-width="110"
@@ -241,8 +251,8 @@ const getMemberProject = async () => {
                 </template>
               </el-popover>
             </template>
-          </el-table-column>
-          <el-table-column
+          </el-table-column> -->
+          <!-- <el-table-column
             label="修改时间"
             class-name="time"
             min-width="110"
@@ -264,7 +274,7 @@ const getMemberProject = async () => {
                 </template>
               </el-popover>
             </template>
-          </el-table-column>
+          </el-table-column> -->
           <el-table-column
             label="审核时间"
             class-name="time"
@@ -348,12 +358,37 @@ const getMemberProject = async () => {
     >
       <div>
         <el-table :data="memberData" stripe style="width: 100%">
-          <el-table-column prop="email" label="用户邮箱" min-width="160" max-width="250" />
-          <el-table-column prop="name" label="用户名" min-width="100" max-width="300"/>
-          <el-table-column prop="phone" label="用手机号" min-width="150" max-width="300"/>
-          <el-table-column prop="phone" label="QQ号" min-width="140" max-width="250"/>
-          <el-table-column prop="phone" label="微信号" min-width="140" max-width="250"/>
-          <el-table-column prop="institution" label="所属机构" min-width="100" max-width="160"/>
+          <el-table-column prop="email" label="用户邮箱" min-width="170" />
+          <el-table-column
+            prop="name"
+            label="用户名"
+            min-width="100"
+            max-width="300"
+          />
+          <el-table-column
+            prop="phone"
+            label="用手机号"
+            min-width="150"
+            max-width="300"
+          />
+          <el-table-column
+            prop="phone"
+            label="QQ号"
+            min-width="140"
+            max-width="250"
+          />
+          <el-table-column
+            prop="phone"
+            label="微信号"
+            min-width="140"
+            max-width="250"
+          />
+          <el-table-column
+            prop="institution"
+            label="所属机构"
+            min-width="100"
+            max-width="160"
+          />
         </el-table>
       </div>
       <template #footer>
@@ -370,10 +405,15 @@ const getMemberProject = async () => {
   flex-direction: column;
 }
 
+.el-table >>> .success-row th {
+  background: #525fad !important;
+  color: #fff !important;
+}
+
 .container-find {
   display: flex;
   flex-direction: row;
-  justify-content: center;
+  /* justify-content: center; */
   align-items: center;
   height: 90px;
   margin-bottom: 10px;

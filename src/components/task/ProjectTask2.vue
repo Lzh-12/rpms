@@ -12,7 +12,7 @@ import {
   modifyTask,
 } from "@/api/task/index.js";
 import { projectMyCreate, projectMembers } from "@/api/project/index.js";
-import { useRoute } from "vue-router";
+// import { useRoute } from "vue-router";
 import { convertTimestamp, formatTime } from "@/utils/timeConverter.js";
 import {
   taskStatusContant,
@@ -20,12 +20,14 @@ import {
   projectStatusMap,
   projectStatusContant,
 } from "@/constants/statusConstants.js";
+import { ElMessage } from "element-plus";
+import { tableRowClassName } from "@/utils/tableUtils.js";
 
 // 用户id
-const route = useRoute();
-const temp = route.query.loginId;
-const loginId = BigInt(temp);
-console.log(loginId);
+// const route = useRoute();
+// const temp = route.query.loginId;
+// const loginId = BigInt(temp);
+// console.log(loginId);
 
 const showColumn = ref(false);
 
@@ -42,11 +44,11 @@ const fetchOptions = async () => {
           id: BigInt(item.id).toString(),
         }));
       } else {
-        alert(response.data.msg || "加载项目失败");
+        ElMessage.error(response.data.msg || "加载项目失败");
       }
     })
     .catch((error) => {
-      alert("加载项目错误");
+      ElMessage.error("加载项目错误");
       console.log("加载项目错误", error);
     });
 };
@@ -84,17 +86,19 @@ const submitContent = async () => {
     .then((response) => {
       if (response.data.code === 0) {
         getTaskMy();
-        alert(response.data.msg || "提交成功");
+        ElMessage.success(response.data.msg || "提交成功");
       } else {
-        alert(response.data.msg || "提交失败");
+        ElMessage.error(response.data.msg || "提交失败");
       }
     })
     .catch((error) => {
-      alert("提交错误");
+      ElMessage.error("提交错误");
       console.log("提交错误", error);
     })
     .finally(() => {
       centerDialogVisible.value = false;
+      taskData.value.id = null;
+      taskData.value.result = "";
     });
 };
 
@@ -109,17 +113,19 @@ watchEffect(() => {
 });
 // 获取对应项目的任务列表接口
 const getTask = async () => {
+  if (!formTask.value.id) {
+    ElMessage.warning("请先选择项目");
+    return;
+  }
   getAllTask(formTask.value)
     .then((response) => {
       if (response.data.code === 0) {
         showColumn.value = true;
-
-        console.log("showColumn", showColumn.value);
         tableData.value = response.data.data.map((item) => ({
           ...item,
           id: BigInt(item.id).toString(),
           projectId: BigInt(item.projectId).toString(),
-          projecStatus: projectStatusMap[item.projecStatus],
+          projectStatus: projectStatusMap[item.projectStatus],
           executorId: BigInt(item.executorId).toString(),
           status: taskStatusMap[item.status],
           gmtCreate: convertTimestamp(item.gmtCreate),
@@ -146,13 +152,13 @@ const getTask = async () => {
               : formatTime(item.gmtFinish).toString(),
           relativeDeadline: formatTime(item.gmtDeadline).toString(),
         }));
-        alert(response.data.msg || "查询成功");
+        // ElMessage.success(response.data.msg || "查询成功");
       } else {
-        alert(response.data.msg || "查询失败");
+        ElMessage.error(response.data.msg || "查询失败");
       }
     })
     .catch((error) => {
-      alert("错误");
+      ElMessage.error("错误");
       console.log("查询错误：", error);
     });
 };
@@ -167,7 +173,7 @@ const getTaskMy = async () => {
           ...item,
           id: BigInt(item.id).toString(),
           projectId: BigInt(item.projectId).toString(),
-          projecStatus: projectStatusMap[item.projecStatus],
+          projectStatus: projectStatusMap[item.projectStatus],
           status: taskStatusMap[item.status],
           gmtSubmit:
             item.gmtSubmit === 0 ? "未提交" : convertTimestamp(item.gmtSubmit),
@@ -187,13 +193,13 @@ const getTaskMy = async () => {
               : formatTime(item.gmtFinish).toString(),
           relativeDeadline: formatTime(item.gmtDeadline).toString(),
         }));
-        alert(response.data.msg || "查询成功");
+        // ElMessage.success(response.data.msg || "查询成功");
       } else {
-        alert(response.data.msg || "查询失败");
+        ElMessage.error(response.data.msg || "查询失败");
       }
     })
     .catch((error) => {
-      alert("查询错误");
+      ElMessage.error("查询错误");
       console.log("查询错误：", error);
     });
 };
@@ -209,7 +215,7 @@ function taskDeleteDialog(id) {
   centerDialogVisible2.value = true;
 }
 const showDeleteButton = (status) => {
-  // “草稿” 状态才能提交
+  // “草稿” 状态才能删除
   return status === taskStatusContant.STATUS_DRAFT && showColumn.value;
 };
 // 删除任务的接口
@@ -220,13 +226,13 @@ const deleteContent = async () => {
       if (response.data.code === 0) {
         // 获取后端数据
         getTaskMy();
-        alert(response.data.msg || "删除成功");
+        ElMessage.success(response.data.msg || "删除成功");
       } else {
-        alert(response.data.msg || "删除失败");
+        ElMessage.error(response.data.msg || "删除失败");
       }
     })
     .catch((error) => {
-      alert("删除错误");
+      ElMessage.error("删除错误");
       console.log("删除错误：", error);
     })
     .finally(() => {
@@ -270,13 +276,13 @@ const getProjectAndMember = async () => {
           ...item,
           id: BigInt(item.id).toString(),
         }));
-        alert(response.data.msg || "加载成员成功");
+        // ElMessage.success(response.data.msg || "加载成员成功");
       } else {
-        alert(response.data.msg || "加载成员失败");
+        ElMessage.error(response.data.msg || "加载成员失败");
       }
     })
     .catch((error) => {
-      alert("加载成员错误");
+      ElMessage.error("加载成员错误");
       console.log("加载成员错误", error);
     });
 };
@@ -288,7 +294,7 @@ const taskPublish = async () => {
     !publishData.value.content ||
     !timestamp.value.time
   ) {
-    alert("请确保输入完整数据");
+    ElMessage.warning("请确保输入完整数据");
     return;
   }
   // 转换为时间戳
@@ -296,13 +302,13 @@ const taskPublish = async () => {
   publishTask(publishData.value)
     .then((response) => {
       if (response.data.code === 0) {
-        alert(response.data.msg || "发布任务成功");
+        ElMessage.success(response.data.msg || "发布任务成功");
       } else {
-        alert(response.data.msg || "发布任务失败");
+        ElMessage.error(response.data.msg || "发布任务失败");
       }
     })
     .catch((error) => {
-      alert("发布任务错误");
+      ElMessage.error("发布任务错误");
       console.log("发布任务错误", error);
     })
     .finally(() => {
@@ -325,26 +331,28 @@ const formModify = ref({
   content: "",
   gmt_deadline: null,
 });
-function taskModifyDialog(id, executor_id) {
+function taskModifyDialog(id, executorId) {
   formModify.value.id = BigInt(id);
-  formModify.value.executor_id = BigInt(executor_id);
+  formModify.value.executor_id = BigInt(executorId);
   centerDialogVisibleModify.value = true;
 }
 const taskModify = async () => {
+  formModify.value.gmt_deadline = BigInt(timestamp.value.time.getTime());
   if (!formModify.value.content || !formModify.value.gmt_deadline) {
-    alert("请输入完整内容");
+    ElMessage.warning("请输入完整内容");
     return;
   }
-  modifyTask()
+  modifyTask(formModify.value)
     .then((response) => {
       if (response.data.code === 0) {
+        ElMessage.success(response.data.msg || "修改成功");
         getTask(); // 加载任务
       } else {
-        alert(response.data.msg || "修改失败");
+        ElMessage.error(response.data.msg || "修改失败");
       }
     })
     .catch((error) => {
-      alert("修改错误");
+      ElMessage.error("修改错误");
       console.log("修改错误", error);
     })
     .finally(() => {
@@ -372,11 +380,11 @@ const taskEnsure = async () => {
       if (response.data.code === 0) {
         getTaskMy();
       } else {
-        alert(response.data.msg || "确认失败");
+        ElMessage.error(response.data.msg || "确认失败");
       }
     })
     .catch((error) => {
-      alert("确认错误");
+      ElMessage.error("确认错误");
       console.log("确认错误", error);
     })
     .finally(() => {
@@ -407,11 +415,11 @@ const taskFinish = async () => {
       if (response.data.code === 0) {
         getTaskMy();
       } else {
-        alert(response.data.msg || "提交失败");
+        ElMessage.error(response.data.msg || "提交失败");
       }
     })
     .catch((error) => {
-      alert("提交错误");
+      ElMessage.error("提交错误");
       console.log("提交错误", error);
     })
     .finally(() => {
@@ -426,10 +434,10 @@ const taskFinish = async () => {
     <!-- 需要完成的任务 -->
     <div class="container-task">
       <div class="container-task-select">
+        <div>项目</div>
         <el-select
           v-model="selectValue"
           placeholder="请选择项目中我发布的任务"
-          size="large"
           style="width: 260px; margin-left: 30px; margin-right: 30px"
         >
           <el-option
@@ -445,7 +453,15 @@ const taskFinish = async () => {
     </div>
 
     <div class="container-content">
-      <div style="width: 95%; margin-top: 20px; margin-bottom: 30px">
+      <div
+        style="
+          width: 95%;
+          margin-top: 20px;
+          margin-bottom: 30px;
+          padding-bottom: 10px;
+          border-bottom: 2px solid #f8f8f8f8;
+        "
+      >
         <el-button
           type="primary"
           plain
@@ -454,7 +470,11 @@ const taskFinish = async () => {
         >
       </div>
       <div class="table">
-        <el-table :data="tableData">
+        <el-table
+          :data="tableData"
+          stripe
+          :header-row-class-name="tableRowClassName"
+        >
           <el-table-column
             v-if="showColumn"
             fixed
@@ -500,7 +520,7 @@ const taskFinish = async () => {
               <!-- </template> -->
               <!-- <template #reference> -->
               <el-tag effect="plain" type="success">
-                {{ scope.row.projecStatus }}
+                {{ scope.row.projectStatus }}
               </el-tag>
               <!-- </template> -->
               <!-- </el-popover> -->
@@ -538,7 +558,7 @@ const taskFinish = async () => {
           </el-table-column>
           <el-table-column
             v-if="showColumn"
-            label="任务创建时间"
+            label="创建时间"
             min-width="150"
             max-width="230"
             show-overflow-tooltip
@@ -561,7 +581,7 @@ const taskFinish = async () => {
           </el-table-column>
           <el-table-column
             v-if="showColumn"
-            label="任务修改时间"
+            label="修改时间"
             min-width="150"
             max-width="230"
             show-overflow-tooltip
@@ -583,7 +603,7 @@ const taskFinish = async () => {
             </template>
           </el-table-column>
           <el-table-column
-            label="任务提交时间"
+            label="提交时间"
             min-width="150"
             max-width="230"
             show-overflow-tooltip
@@ -605,7 +625,7 @@ const taskFinish = async () => {
             </template>
           </el-table-column>
           <el-table-column
-            label="任务确认时间"
+            label="确认时间"
             min-width="150"
             max-width="230"
             show-overflow-tooltip
@@ -627,7 +647,7 @@ const taskFinish = async () => {
             </template>
           </el-table-column>
           <el-table-column
-            label="任务完成时间"
+            label="完成时间"
             min-width="150"
             max-width="230"
             show-overflow-tooltip
@@ -649,7 +669,7 @@ const taskFinish = async () => {
             </template>
           </el-table-column>
           <el-table-column
-            label="任务截止时间"
+            label="截止时间"
             min-width="150"
             max-width="230"
             show-overflow-tooltip
@@ -681,7 +701,7 @@ const taskFinish = async () => {
             fixed="right"
             label="操作"
             min-width="150"
-            max-width="220"
+            max-width="280"
           >
             <template #default="scope">
               <el-button
@@ -690,19 +710,19 @@ const taskFinish = async () => {
                 size="small"
                 style="margin-right: 0"
                 v-if="
-                  showSubmitButton(scope.row.projecStatus, scope.row.status)
+                  showSubmitButton(scope.row.projectStatus, scope.row.status)
                 "
                 @click="taskSubmitDialog(scope.row.id)"
               >
-                提交
+                发布
               </el-button>
               <el-button
                 link
                 type="primary"
                 size="small"
                 style="margin-right: 0"
-                v-if="showModifyButton(scope.row.projecStatus)"
-                @click="taskModifyDialog(scope.row.id, scope.row.executor_id)"
+                v-if="showModifyButton(scope.row.status)"
+                @click="taskModifyDialog(scope.row.id, scope.row.executorId)"
               >
                 修改
               </el-button>
@@ -712,7 +732,7 @@ const taskFinish = async () => {
                 size="small"
                 style="margin-right: 0"
                 @click="taskDeleteDialog(scope.row.id)"
-                v-if="showDeleteButton(scope.row.projecStatus)"
+                v-if="showDeleteButton(scope.row.status)"
                 >删除</el-button
               >
               <el-button
@@ -742,8 +762,8 @@ const taskFinish = async () => {
     </div>
   </div>
   <!-- 提交任务 -->
-  <el-dialog v-model="centerDialogVisible" title="提交任务" width="500" center>
-    <span>确认提交该任务？</span>
+  <el-dialog v-model="centerDialogVisible" title="发布任务" width="500" center>
+    <span>确认发布该任务？</span>
     <template #footer>
       <div class="dialog-footer">
         <el-button @click="centerDialogVisible = false">取消</el-button>
@@ -756,7 +776,7 @@ const taskFinish = async () => {
   <el-dialog
     v-model="centerDialogVisibleModify"
     title="修改任务"
-    width="600"
+    width="700"
     center
   >
     <div style="display: flex; flex-direction: column; align-items: center">
@@ -764,7 +784,7 @@ const taskFinish = async () => {
         <el-input
           v-model="formModify.content"
           type="textarea"
-          style="width: 240px"
+          style="width: 350px"
         />
       </el-form-item>
       <div>
@@ -773,6 +793,7 @@ const taskFinish = async () => {
           v-model="timestamp.time"
           type="datetime"
           placeholder="选择日期和时间"
+          style="width: 350px"
         />
       </div>
     </div>
@@ -790,7 +811,7 @@ const taskFinish = async () => {
     <template #footer>
       <div class="dialog-footer">
         <el-button @click="centerDialogVisible2 = false">取消</el-button>
-        <el-button type="primary" @click="deleteContent"> 确认 </el-button>
+        <el-button type="danger" @click="deleteContent"> 确认 </el-button>
       </div>
     </template>
   </el-dialog>
@@ -847,7 +868,7 @@ const taskFinish = async () => {
         <label for="" style="margin-right: 15px">项目标题</label>
         <el-select
           v-model="publishData.id"
-          placeholder="请选择项目id"
+          placeholder="请选择项目"
           style="width: 240px"
         >
           <el-option
@@ -866,7 +887,7 @@ const taskFinish = async () => {
         >
         <el-select
           v-model="publishData.executor_id"
-          placeholder="请选择成员id"
+          placeholder="请选择成员"
           style="width: 240px"
         >
           <el-option
@@ -877,7 +898,7 @@ const taskFinish = async () => {
           />
         </el-select>
       </div>
-      <el-form-item label="项目内容">
+      <el-form-item label="任务内容">
         <el-input
           v-model="publishData.content"
           type="textarea"
@@ -908,7 +929,8 @@ const taskFinish = async () => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  height: 93vh;
+  /* height: 93vh; */
+  /* height: 90vh; */
   padding-left: 20px;
   padding-right: 20px;
 }
@@ -927,6 +949,7 @@ const taskFinish = async () => {
 .container-task-select {
   display: flex;
   flex-direction: row;
+  align-items: center;
 }
 
 .container-task-label {
@@ -969,6 +992,11 @@ const taskFinish = async () => {
   align-items: center;
   justify-content: center;
   padding: 10px;
+}
+
+.el-table >>> .success-row th {
+  background: #525fad !important;
+  color: #fff !important;
 }
 
 /* @media screen and (min-width: 1500px) {

@@ -67,3 +67,4 @@ export const getAllTask = (taskId) => {
     }
     return sendRequest("get", `/task/project/${params.get('id')}/all`, params);
 }
+

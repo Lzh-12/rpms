@@ -3,8 +3,9 @@ import { ref, onMounted } from "vue";
 import { Search } from "@element-plus/icons-vue";
 import { achieveAllApproved } from "@/api/achieve/index.js";
 import { projectMy } from "@/api/project/index.js";
-import { achieveStatusMap } from "@/constants/statusConstants.js";
 import { convertTimestamp, formatTime } from "@/utils/timeConverter.js";
+import { ElMessage } from "element-plus";
+import { tableRowClassName } from "@/utils/tableUtils.js";
 
 // 项目编号
 const options = ref([]);
@@ -24,11 +25,11 @@ const fetchOptions = async () => {
           id: BigInt(item.id).toString(),
         }));
       } else {
-        alert(response.data.msg || "加载项目失败");
+        ElMessage.error(response.data.msg || "加载项目失败");
       }
     })
     .catch((error) => {
-      alert("加载项目错误");
+      ElMessage.error("加载项目错误");
       console.log("加载项目错误", error);
     });
 };
@@ -51,41 +52,34 @@ const tableData = ref([]);
 
 // 项目已通过的经费列表的接口
 const searchApproved = async () => {
+  // form.value.id = BigInt(form.value.id);
+  if (form.value.id === null) {
+    ElMessage.warning("请选择项目");
+    return;
+  }
   achieveAllApproved(form.value)
     .then((response) => {
       if (response.data.code === 0) {
         tableData.value = response.data.data.map((item) => ({
           ...item,
           id: BigInt(item.id).toString(),
-          projectId: BigInt(item.projectId).toString(),
           submitterId: BigInt(item.submitterId).toString(),
-          status: achieveStatusMap[item.status],
-          gmtCreate: convertTimestamp(item.gmtCreate).toString(),
-          gmtModify:
-            item.gmtModify === 0
-              ? "未修改"
-              : convertTimestamp(item.gmtModify).toString(),
           gmtReview:
             item.gmtReview === 0
               ? "未审核"
               : convertTimestamp(item.gmtReview).toString(),
-          relativeCreate: formatTime(item.gmtCreate).toString(),
-          relativeModify:
-            item.gmtModify === 0
-              ? "未修改"
-              : formatTime(item.gmtModify).toString(),
           relativeReview:
             item.gmtReview === 0
               ? "未审核"
               : formatTime(item.gmtReview).toString(),
         }));
-        alert(response.data.msg || "查询成功");
+        // ElMessage.success(response.data.msg || "查询成功");
       } else {
-        alert(response.data.msg || "查询失败");
+        ElMessage.error(response.data.msg || "查询失败");
       }
     })
     .catch((error) => {
-      alert("查询错误");
+      ElMessage.error("查询错误");
       console.log("查询错误", error);
     });
 };
@@ -94,7 +88,7 @@ const searchApproved = async () => {
 <template>
   <div class="container">
     <div class="container-title">
-      <el-form-item label="项目标题">
+      <el-form-item label="项目">
         <el-select v-model="form.id" placeholder="请选择项目">
           <el-option
             v-for="item in options"
@@ -114,11 +108,16 @@ const searchApproved = async () => {
     </div>
 
     <div class="table">
-      <el-table :data="tableData" style="width: 100%">
+      <el-table
+        :data="tableData"
+        style="width: 100%"
+        stripe
+        :header-row-class-name="tableRowClassName"
+      >
         <el-table-column
           fixed
           label="成果提交人"
-          min-width="100"
+          min-width="80"
           max-width="200"
           show-overflow-tooltip
         >
@@ -156,79 +155,12 @@ const searchApproved = async () => {
           show-overflow-tooltip
         />
         <el-table-column
-          prop="status"
-          label="成果状态"
-          min-width="120"
-          max-width="200"
-        >
-          <template #default="scope">
-            <el-popover
-              effect="light"
-              trigger="hover"
-              placement="top"
-              width="auto"
-            >
-              <template #default>
-                <div>类型: {{ scope.row.type }}</div>
-                <div>状态: {{ scope.row.status }}</div>
-              </template>
-              <template #reference>
-                <el-tag>{{ scope.row.status }}</el-tag>
-              </template>
-            </el-popover>
-          </template>
-        </el-table-column>
-        <el-table-column
           prop="type"
           label="成果类型"
-          min-width="120"
+          min-width="100"
           max-width="200"
           show-overflow-tooltip
         />
-        <el-table-column
-          label="提交时间"
-          min-width="110"
-          max-width="240"
-          show-overflow-tooltip
-        >
-          <template #default="scope">
-            <el-popover
-              effect="light"
-              trigger="hover"
-              placement="top"
-              width="auto"
-            >
-              <template #default>
-                <div>创建时间: {{ scope.row.gmtCreate }}</div>
-              </template>
-              <template #reference>
-                {{ scope.row.relativeCreate }}
-              </template>
-            </el-popover>
-          </template>
-        </el-table-column>
-        <el-table-column
-          label="修改时间"
-          min-width="110"
-          max-width="240"
-          show-overflow-tooltip
-        >
-          <template #default="scope">
-            <el-popover
-              effect="light"
-              trigger="hover"
-              placement="top"
-              width="auto"
-            >
-              <template #default>
-                <div>修改时间: {{ scope.row.gmtModify }}</div>
-              </template>
-              <template #reference>
-                {{ scope.row.relativeModify }}
-              </template>
-            </el-popover>
-          </template>
-        </el-table-column>
         <el-table-column
           label="审核时间"
           min-width="110"
@@ -281,6 +213,12 @@ const searchApproved = async () => {
   background-color: #ffffff;
   width: 100%;
   margin-bottom: 10px;
+}
+
+.el-table >>> .success-row th {
+  background: #edf6fb !important;
+  background: #525fad !important;
+  color: #fff !important;
 }
 
 .el-form-item {

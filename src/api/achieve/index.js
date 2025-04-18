@@ -38,7 +38,7 @@ export const achieveModify = (achieveData) => {
     for(let key in achieveData){
         params.append(key, achieveData[key])
     }
-    return sendRequest("post", `/achieve/${params.get('id')}/modify`, params);
+    return sendRequest("put", `/achieve/${params.get('id')}/modify`, params);
 }
 
 // 提交成果
@@ -47,7 +47,7 @@ export const achieveSubmit = (achieveData) => {
     for(let key in achieveData){
         params.append(key, achieveData[key])
     }
-    return sendRequest("post", `/achieve/${params.get('id')}/submit`, params);
+    return sendRequest("put", `/achieve/${params.get('id')}/submit`, params);
 }
 
 // 获取项目的全部状态的成果列表

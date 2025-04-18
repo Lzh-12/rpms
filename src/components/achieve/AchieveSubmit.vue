@@ -7,6 +7,8 @@ import {
   projectStatusMap,
 } from "@/constants/statusConstants.js";
 import { convertTimestamp, formatTime } from "@/utils/timeConverter.js";
+import { ElMessage } from "element-plus";
+import { tableRowClassName } from "@/utils/tableUtils.js";
 
 // 成果列表
 const tableData = ref([]);
@@ -15,7 +17,12 @@ const formData = ref({
 });
 // 获取成果申请列表接口
 const allAchieve = async () => {
+  if (!form.value.id) {
+    ElMessage.warning("请选择项目");
+    return;
+  }
   formData.value.id = BigInt(form.value.id);
+
   achieveAll(formData.value)
     .then((response) => {
       if (response.data.code === 0) {
@@ -23,35 +30,31 @@ const allAchieve = async () => {
           ...item,
           id: BigInt(item.id).toString(),
           projectId: BigInt(item.projectId).toString(),
-          projecStatus: projectStatusMap[item.projecStatus],
+          projectStatus: projectStatusMap[item.projectStatus],
           submitterId: BigInt(item.submitterId).toString(),
           status: achieveStatusMap[item.status],
-          gmtCreate: convertTimestamp(item.gmtCreate).toString(),
+          gmtSubmit: convertTimestamp(item.gmtSubmit).toString(),
           gmtReview:
             item.gmtReview === 0
               ? "未审核"
               : convertTimestamp(item.gmtReview).toString(),
-          relativeCreate: formatTime(item.gmtCreate).toString(),
-          relativeModify:
-            item.gmtModify === 0
-              ? "未修改"
-              : formatTime(item.gmtModify).toString(),
+          relativeSubmit: formatTime(item.gmtSubmit).toString(),
           relativeReview:
             item.gmtReview === 0
               ? "未审核"
               : formatTime(item.gmtReview).toString(),
         }));
-        alert(response.data.msg || "加载成功");
       } else {
-        alert(response.data.msg || "加载失败");
+        ElMessage.error(response.data.msg || "加载失败");
       }
     })
     .catch((error) => {
-      alert("加载错误");
+      ElMessage.error("加载错误");
       console.log("加载错误", error);
     });
 };
 
+const formTitle = ref("");
 // 审核对话框
 const centerDialogVisible2 = ref(false);
 const formReview = ref({
@@ -59,9 +62,10 @@ const formReview = ref({
   approved: null,
   content: "",
 });
-const reviewDialog = async (id) => {
+const reviewDialog = async (id, title) => {
   centerDialogVisible2.value = true;
   formReview.value.id = BigInt(id);
+  formTitle.value = title;
 };
 const reviewAchieveApply = async () => {
   if (!formReview.value.content) {
@@ -71,13 +75,14 @@ const reviewAchieveApply = async () => {
   achieveExamine(formReview.value)
     .then((response) => {
       if (response.data.code === 0) {
-        alert(response.data.msg || "审核成功");
+        ElMessage.success(response.data.msg || "审核成功");
+        allAchieve();
       } else {
-        alert(response.data.msg || "审核失败");
+        ElMessage.error(response.data.msg || "审核失败");
       }
     })
     .catch((error) => {
-      alert("审核错误");
+      ElMessage.error("审核错误");
       console.log("审核错误：", error);
     })
     .finally(() => {
@@ -101,11 +106,11 @@ const fetchOptions = async () => {
           id: BigInt(item.id).toString(),
         }));
       } else {
-        alert(response.data.msg || "加载项目失败");
+        ElMessage.error(response.data.msg || "加载项目失败");
       }
     })
     .catch((error) => {
-      alert("加载项目错误");
+      ElMessage.error("加载项目错误");
       console.log("加载项目错误:", error);
     });
 };
@@ -127,7 +132,7 @@ onMounted(() => {
 <template>
   <div class="container">
     <div class="container-title">
-      <el-form-item label="项目标题">
+      <el-form-item label="项目">
         <el-select v-model="form.id" placeholder="请选择项目">
           <el-option
             v-for="item in options"
@@ -146,7 +151,11 @@ onMounted(() => {
       >
     </div>
     <div class="table">
-      <el-table :data="tableData">
+      <el-table
+        :data="tableData"
+        stripe
+        :header-row-class-name="tableRowClassName"
+      >
         <el-table-column
           fixed
           label="成果提交人"
@@ -167,9 +176,7 @@ onMounted(() => {
               </template>
               <template #reference>
                 <!-- <el-tag effect="plain" type="success"> -->
-                  {{
-                  scope.row.submitterName
-                }}
+                {{ scope.row.submitterName }}
                 <!-- </el-tag> -->
               </template>
             </el-popover>
@@ -179,20 +186,20 @@ onMounted(() => {
           prop="title"
           label="成果标题"
           min-width="120"
-          max-width="250"
+          max-width="300"
           show-overflow-tooltip
         />
         <el-table-column
           prop="content"
           label="成果内容"
           min-width="120"
-          max-width="280"
+          max-width="300"
           show-overflow-tooltip
         />
         <el-table-column
           prop="status"
           label="成果状态"
-          min-width="120"
+          min-width="100"
           max-width="200"
         >
           <template #default="scope">
@@ -221,7 +228,7 @@ onMounted(() => {
         />
         <el-table-column
           label="提交时间"
-          min-width="120"
+          min-width="100"
           max-width="240"
           show-overflow-tooltip
         >
@@ -233,42 +240,18 @@ onMounted(() => {
               width="auto"
             >
               <template #default>
-                <div>创建时间: {{ scope.row.gmtCreate }}</div>
+                <div>提交时间: {{ scope.row.gmtSubmit }}</div>
               </template>
               <template #reference>
-                {{ scope.row.relativeCreate }}
+                {{ scope.row.relativeSubmit }}
               </template>
             </el-popover>
           </template>
         </el-table-column>
-        <el-table-column
-          label="修改时间"
-          min-width="120"
-          max-width="240"
-          show-overflow-tooltip
-        >
-          <template #default="scope">
-            <el-popover
-              effect="light"
-              trigger="hover"
-              placement="top"
-              width="auto"
-            >
-              <template #default>
-                <div>修改时间: {{ scope.row.gmtModify }}</div>
-              </template>
-              <template #reference>
-                {{ scope.row.relativeModify }}
-              </template>
-            </el-popover>
-          </template>
-        </el-table-column>
-
         <el-table-column
           label="审核时间"
-          min-width="120"
+          min-width="100"
           max-width="240"
-          width="180"
           show-overflow-tooltip
         >
           <template #default="scope">
@@ -290,7 +273,7 @@ onMounted(() => {
         <el-table-column
           fixed="right"
           label="操作"
-          min-width="120"
+          min-width="100"
           max-width="200"
         >
           <template #default="scope">
@@ -298,7 +281,8 @@ onMounted(() => {
               link
               type="primary"
               size="small"
-              @click="reviewDialog(scope.row.id, scope.row.status)"
+              v-if="scope.row.status === '已提交'"
+              @click="reviewDialog(scope.row.id, scope.row.title)"
             >
               审核
             </el-button>
@@ -309,7 +293,20 @@ onMounted(() => {
   </div>
 
   <el-dialog v-model="centerDialogVisible2" title="审核成果" width="700" center>
-    <div style="display: flex; flex-direction: column; align-items: center">
+    <div
+      style="
+        display: flex;
+        flex-direction: column;
+        width: 500;
+        align-items: center;
+      "
+    >
+      <div style="display: flex; flex-direction: row; margin-bottom: 20px">
+        <label for="" style="white-space: nowrap; margin-right: 20px"
+          >成果标题</label
+        >
+        <el-input v-model="formTitle" style="width: 450px" disabled />
+      </div>
       <div style="display: flex; flex-direction: row; margin-bottom: 20px">
         <label for="" style="margin-right: 20px">审核内容</label>
         <el-input
@@ -377,6 +374,11 @@ onMounted(() => {
 .el-form-item {
   width: 40%;
   margin-right: 20px;
+}
+
+.el-table >>> .success-row th {
+  background: #525fad !important;
+  color: #fff !important;
 }
 
 .search {

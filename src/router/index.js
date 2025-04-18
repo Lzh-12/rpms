@@ -1,5 +1,5 @@
-import { createRouter, createWebHistory } from "vue-router";
-import { tokenObj } from "@/utils/request.js";
+// import { createRouter, createWebHistory } from "vue-router";
+import { createRouter, createWebHashHistory } from "vue-router";
 
 // 配置路由
 const routes = [
@@ -10,11 +10,14 @@ const routes = [
   {
     path: '/login',
     name: 'UserLogin',
+    meta: { title: '用户登录' },
     component: () => import("../views/UserLogin.vue")
   },
   {
     path: '/member',
     name: 'ScienceHome',
+    meta: { title: '科研主页' },
+    redirect: '/member/project/apply',
     component: () => import("../views/MemberHome.vue"),
   },
   // --------- 项目管理
@@ -25,6 +28,7 @@ const routes = [
       {
         path: 'apply', // 子路由
         name: 'ProjectApply',
+        meta : { title: '项目申请' },
         component: () => import("../components/project/ProjectApply.vue")
       }
     ]
@@ -37,6 +41,7 @@ const routes = [
       {
         path: 'detail/:id', // 子路由
         name: 'ProjectDetail',
+        meta : { title: '项目详情' },
         component: () => import("../components/project/ProjectDetails.vue")
       }
     ],
@@ -49,6 +54,7 @@ const routes = [
       {
         path: 'task', // 子路由
         name: 'Task',
+        meta : { title: '任务管理' },
         component: () => import("../components/task/ProjectTask.vue")
       }
     ],
@@ -61,6 +67,7 @@ const routes = [
       {
         path: 'reimburse', // 子路由
         name: 'FundsReimburse',
+        meta : { title: '经费管理' },
         component: () => import("../components/fund/FundsReimburse.vue")
       }
     ],
@@ -73,6 +80,7 @@ const routes = [
       {
         path: 'result', // 子路由
         name: 'AchieveResult',
+        meta : { title: '成果管理' },
         component: () => import("../components/achieve/AchieveManagement")
       }
     ],
@@ -85,6 +93,7 @@ const routes = [
       {
         path: 'info', // 子路由
         name: 'UserInfo',
+        meta: { title: '个人信息' },
         component: () => import("../components/user/UserInfo.vue")
       }
     ],
@@ -95,6 +104,8 @@ const routes = [
   {
     path: '/director',
     name: 'DirectorHome',
+    meta: { title: '项目负责人主页' },
+    redirect: '/director/project/apply',
     component: () => import("../views/DirectorHome.vue"),
   },
   // --------- 项目管理
@@ -105,6 +116,7 @@ const routes = [
       {
         path: 'apply', // 子路由
         name: 'DirectorProjectApply',
+        meta: { title: '项目申请' },
         component: () => import("../components/project/ProjectApply2.vue")
       }
     ],
@@ -117,6 +129,7 @@ const routes = [
       {
         path: 'detail/:id', // 子路由
         name: 'directorProjectMyDetailId',
+        meta: { title: '项目详情' },
         component: () => import("../components/project/ProjectDetails.vue")
       }
     ],
@@ -129,6 +142,7 @@ const routes = [
       {
         path: 'task', // 子路由
         name: 'director/tasks/task',
+        meta: { title: '任务管理' },
         component: () => import("../components/task/ProjectTask2.vue")
       }
     ],
@@ -141,6 +155,7 @@ const routes = [
       {
         path: 'reimburse', // 子路由
         name: 'director/funds/reimburse',
+        meta: { title: '经费管理' },
         component: () => import("../components/fund/FundsReimburse2.vue")
       }
     ],
@@ -153,6 +168,7 @@ const routes = [
       {
         path: 'result', // 子路由
         name: 'DirectorAchieveResult',
+        meta: { title: '成果管理' },
         component: () => import("../components/achieve/AchieveManagement2")
       }
     ],
@@ -165,6 +181,7 @@ const routes = [
       {
         path: 'info', // 子路由
         name: 'DirectorUserInfo',
+        meta: { title: '个人信息' },
         component: () => import("../components/user/UserInfo.vue")
       }
     ],
@@ -175,6 +192,8 @@ const routes = [
   {
     path: '/admin',
     name: 'AdminHome',
+    meta: { title: '管理员主页' },
+    redirect: '/admin/project/apply',
     component: () => import("../views/AdminHome.vue"),
   },
   // --------- 项目管理
@@ -209,7 +228,8 @@ const routes = [
       {
         path: 'reimburse', // 子路由
         name: 'adminFundsReimburse',
-        component: () => import("../components/fund/FundsReimburse3.vue")
+        // component: () => import("../components/fund/FundsReimburse3.vue")
+        component: () => import("../components/fund/FundsApprovedList.vue")
       }
     ],
   },
@@ -221,7 +241,8 @@ const routes = [
       {
         path: 'result', // 子路由
         name: 'AdminAchieveResult',
-        component: () => import("../components/achieve/AchieveManagement3")
+        // component: () => import("../components/achieve/AchieveManagement3")
+        component: () => import("../components/achieve/AchieveApprovedList.vue")
       }
     ],
   },
@@ -246,14 +267,22 @@ const routes = [
 
 // 创建路由实例
 const router = createRouter({
-  history: createWebHistory(),
+  // history: createWebHistory(),
+  history: createWebHashHistory(),
   routes: routes
 })
 
 // 路由守卫
 router.beforeEach((to, from, next) => {
+  const now = new Date();
+  const t = JSON.parse(sessionStorage.getItem("tokenTimeout"))
+  let diffInDays = Math.floor((now - t))
   // token 失效跳转到登录界面
-  if (to.name !== 'UserLogin' && tokenObj.tokenValue === '123456') {
+  if (to.name !== 'UserLogin' && 
+        (!JSON.parse(sessionStorage.getItem("satoken")) ||
+        (diffInDays > 0))) {
+    sessionStorage.removeItem("satoken"); // 清除token
+    sessionStorage.removeItem("tokenTimeout");
     next({ name: 'UserLogin' });
   } else {
     next();

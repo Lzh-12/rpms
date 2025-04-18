@@ -1,6 +1,8 @@
 <script setup>
 import { ref, onMounted } from "vue";
 import { getAllUserService, updateUserGrantService } from "@/api/user/index.js";
+import { ElMessage } from "element-plus";
+import { tableRowClassName } from "@/utils/tableUtils.js";
 
 const centerDialogVisible = ref(false);
 
@@ -10,14 +12,16 @@ const fetchTableData = async () => {
   getAllUserService()
     .then((response) => {
       if (response.data.code === 0) {
-        tableData.value = response.data.data.map((item) => ({
-          ...item,
-          id: BigInt(item.id).toString(),
-        }));
+        tableData.value = response.data.data
+          .filter((item) => item.id !== 0)
+          .map((item) => ({
+            ...item,
+            id: BigInt(item.id).toString(),
+          }));
       }
     })
     .catch((error) => {
-      alert("获取用户信息错误");
+      ElMessage.error("获取用户信息错误");
       console.log("获取用户信息错误", error);
     });
 };
@@ -41,13 +45,13 @@ const updateGrant = async () => {
   updateUserGrantService(formData.value)
     .then((response) => {
       if (response.data.code === 0) {
-        alert(response.data.msg || "修改成功");
+        ElMessage.success(response.data.msg || "修改成功");
       } else {
-        alert(response.data.msg || "修改失败");
+        ElMessage.error(response.data.msg || "修改失败");
       }
     })
     .catch((error) => {
-      alert("修改错误");
+      ElMessage.error("修改错误");
       console.log("修改错误", error);
     })
     .finally(() => {
@@ -84,18 +88,64 @@ const optionsIsGrant = ref([
 <template>
   <div class="container">
     <div class="table">
-      <el-table :data="tableData" stripe style="width: 100%">
-        <el-table-column fixed prop="id" label="用户编号" min-width="230" max-width="350" show-overflow-tooltip/>
-        <el-table-column prop="email" label="用户邮箱" min-width="230" max-width="350" show-overflow-tooltip/>
-        <el-table-column prop="name" label="用户名" min-width="200" max-width="350" show-overflow-tooltip/>
-        <el-table-column prop="phone" label="用户手机号" min-width="200" max-width="350" show-overflow-tooltip/>
-        <el-table-column fixed="right" label="操作" min-width="100" max-width="200">
+      <el-table
+        :data="tableData"
+        stripe
+        style="width: 100%"
+        border
+        :header-row-class-name="tableRowClassName"
+      >
+        <!-- <el-table-column fixed prop="id" label="用户编号" min-width="230" max-width="350" show-overflow-tooltip/> -->
+        <el-table-column
+          prop="email"
+          label="用户邮箱"
+          min-width="230"
+          max-width="500"
+          show-overflow-tooltip
+        />
+        <el-table-column
+          prop="name"
+          label="用户名"
+          min-width="200"
+          max-width="450"
+          show-overflow-tooltip
+        />
+        <el-table-column
+          prop="phone"
+          label="用户手机号"
+          min-width="200"
+          max-width="500"
+          show-overflow-tooltip
+        />
+        <el-table-column
+          prop="qq"
+          label="QQ号"
+          min-width="150"
+          max-width="500"
+          show-overflow-tooltip
+        />
+        <el-table-column
+          prop="wechat"
+          label="微信号"
+          min-width="150"
+          max-width="500"
+          show-overflow-tooltip
+        />
+        <el-table-column
+          prop="institution"
+          label="所属机构"
+          min-width="150"
+          max-width="50"
+          show-overflow-tooltip
+        />
+        <el-table-column
+          fixed="right"
+          label="操作"
+          min-width="100"
+          max-width="300"
+        >
           <template #default="scope">
-            <el-button
-              link
-              type="primary"
-              @click="edit(scope.row.id)"
-            >
+            <el-button link type="primary" @click="edit(scope.row.id)">
               编辑
             </el-button>
           </template>
@@ -173,9 +223,16 @@ const optionsIsGrant = ref([
   margin-right: 30px;
 }
 
+.el-table >>> .success-row th {
+  background: #edf6fb !important;
+  background: #525fad !important;
+  color: #fff !important;
+}
+
 .table {
   display: flex;
   justify-content: center;
   align-items: start;
+  width: 100%;
 }
 </style>   
