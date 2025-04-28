@@ -23,12 +23,17 @@ const gotoPage = (number) => {
   
 <template>
   <div class="container">
-    <el-aside :style="{ width: isCollapse ? '64px' : '200px' }" style="background-color: #ffffff;">
+    <el-aside
+      :style="{ width: isCollapse ? '64px' : '200px' }"
+      style="background-color: #ffffff"
+    >
       <!-- <el-radio-group v-model="isCollapse" style="margin-bottom: 20px">
         <el-radio-button :value="false">展开</el-radio-button>
         <el-radio-button :value="true">隐藏</el-radio-button>
       </el-radio-group> -->
-      <el-button @click="isCollapse = !isCollapse"><el-icon><Operation /></el-icon></el-button>
+      <el-button @click="isCollapse = !isCollapse"
+        ><el-icon><Operation /></el-icon
+      ></el-button>
       <el-menu
         default-active="1"
         class="el-menu-vertical-demo"
@@ -45,18 +50,18 @@ const gotoPage = (number) => {
           <template #title>我的成果申请</template>
         </el-menu-item>
         <el-menu-item index="3" @click="gotoPage('3')">
-          <el-icon><Check /></el-icon>
-          <template #title>已通过的成果</template>
-        </el-menu-item>
-        <el-menu-item index="4" @click="gotoPage('4')">
           <el-icon><Collection /></el-icon>
           <template #title>已提交的成果</template>
+        </el-menu-item>
+        <el-menu-item index="4" @click="gotoPage('4')">
+          <el-icon><Check /></el-icon>
+          <template #title>已通过的成果</template>
         </el-menu-item>
       </el-menu>
     </el-aside>
 
     <el-container>
-      <el-main style="background-color: #f8f8f8;">
+      <el-main style="background-color: #f8f8f8">
         <div>
           <!-- 创建成果申请 -->
           <div
@@ -69,12 +74,13 @@ const gotoPage = (number) => {
           <div v-else-if="mode === '2'">
             <AchieveList></AchieveList>
           </div>
-          <!-- 已通过的成果列表-->
+          <!-- 已提交的成果申请列表-->
           <div v-else-if="mode === '3'">
-            <AchieveApprovedList></AchieveApprovedList>
-          </div>
-          <div v-else-if="mode === '4'">
             <AchieveSubmit></AchieveSubmit>
+          </div>
+          <!-- 已通过的成果列表-->
+          <div v-else-if="mode === '4'">
+            <AchieveApprovedList></AchieveApprovedList>
           </div>
         </div>
       </el-main>

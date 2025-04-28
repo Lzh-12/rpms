@@ -3,7 +3,6 @@ import { ref, onMounted } from "vue";
 import { Search } from "@element-plus/icons-vue";
 import { projectApproedFund } from "@/api/fund/index.js";
 import { projectMy } from "@/api/project/index.js";
-// import { fundStatusMap } from "@/constants/statusConstants.js";
 import { convertTimestamp, formatTime } from "@/utils/timeConverter.js";
 import { ElMessage } from "element-plus";
 import { tableRowClassName } from "@/utils/tableUtils.js";
@@ -60,27 +59,16 @@ const searchApproved = async () => {
         tableData.value = response.data.data.map((item) => ({
           ...item,
           id: BigInt(item.id).toString(),
-          // projectId: BigInt(item.projectId).toString(),
           expenserId: BigInt(item.expenserId).toString(),
           figure: BigInt(item.figure).toString(),
           type: item.type,
-          // status: fundStatusMap[item.status],
-          // gmtCreate: convertTimestamp(item.gmtCreate),
-          // gmtModify:
-          //   item.gmtModify === 0 ? "未修改" : convertTimestamp(item.gmtModify),
           gmtReview:
             item.gmtReview === 0 ? "未审核" : convertTimestamp(item.gmtReview),
-          // relativeCreate: formatTime(item.gmtCreate).toString(),
-          // relativeModify:
-          //   item.gmtModify === 0
-          //     ? "未修改"
-          //     : formatTime(item.gmtModify).toString(),
           relativeReview:
             item.gmtReview === 0
               ? "未审核"
               : formatTime(item.gmtReview).toString(),
         }));
-        // ElMessage.success(response.data.msg || "查询成功");
       } else {
         ElMessage.error(response.data.msg || "查询失败");
       }
@@ -124,7 +112,6 @@ const searchApproved = async () => {
           fixed
           label="经费申请人"
           min-width="120"
-          max-width="220"
           show-overflow-tooltip
         >
           <template #default="scope">
@@ -150,7 +137,6 @@ const searchApproved = async () => {
           prop="content"
           label="经费内容"
           min-width="120"
-          max-width="260"
           show-overflow-tooltip
         />
         <el-table-column
@@ -160,24 +146,6 @@ const searchApproved = async () => {
           max-width="220"
           show-overflow-tooltip
         />
-        <!-- <el-table-column prop="type" label="经费状态" width="100">
-          <template #default="scope">
-            <el-popover
-              effect="light"
-              trigger="hover"
-              placement="top"
-              width="auto"
-            >
-              <template #default>
-                <div>内容: {{ scope.row.figure }}</div>
-                <div>状态: {{ scope.row.type }}</div>
-              </template>
-              <template #reference>
-                <el-tag>{{ scope.row.type }}</el-tag>
-              </template>
-            </el-popover>
-          </template>
-        </el-table-column> -->
         <el-table-column
           prop="type"
           label="经费类型"
@@ -185,55 +153,10 @@ const searchApproved = async () => {
           max-widt="220"
           show-overflow-tooltip
         />
-        <!-- <el-table-column
-          label="创建时间"
-          min-width="140"
-          max-width="230"
-          show-overflow-tooltip
-        >
-          <template #default="scope">
-            <el-popover
-              effect="light"
-              trigger="hover"
-              placement="top"
-              width="auto"
-            >
-              <template #default>
-                <div>创建时间: {{ scope.row.gmtCreate }}</div>
-              </template>
-              <template #reference>
-                {{ scope.row.relativeCreate }}
-              </template>
-            </el-popover>
-          </template>
-        </el-table-column> -->
-        <!-- <el-table-column
-          label="修改时间"
-          min-width="140"
-          max-width="230"
-          show-overflow-tooltip
-        >
-          <template #default="scope">
-            <el-popover
-              effect="light"
-              trigger="hover"
-              placement="top"
-              width="auto"
-            >
-              <template #default>
-                <div>修改时间: {{ scope.row.gmtModify }}</div>
-              </template>
-              <template #reference>
-                {{ scope.row.relativeModify }}
-              </template>
-            </el-popover>
-          </template>
-        </el-table-column> -->
         <el-table-column
           prop="gmtReview"
           label="审核时间"
           min-width="140"
-          max-width="230"
           show-overflow-tooltip
         >
           <template #default="scope">
@@ -256,7 +179,6 @@ const searchApproved = async () => {
           prop="reviewContent"
           label="审核内容"
           min-width="140"
-          max-width="250"
           show-overflow-tooltip
         />
       </el-table>

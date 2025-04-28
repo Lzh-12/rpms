@@ -175,15 +175,13 @@ const getMemberProject = async () => {
             label="标题"
             class-name="title"
             min-width="100"
-            max-width="170"
             show-overflow-tooltip
           />
           <el-table-column
             prop="leaderName"
             label="负责人"
             class-name="status"
-            min-width="100"
-            max-width="160"
+            min-width="70"
             show-overflow-tooltip
           >
             <template #default="scope">
@@ -210,7 +208,6 @@ const getMemberProject = async () => {
             label="状态"
             class-name="status"
             min-width="90"
-            max-width="160"
           >
             <template #default="scope">
               <el-popover
@@ -229,57 +226,10 @@ const getMemberProject = async () => {
               </el-popover>
             </template>
           </el-table-column>
-          <!-- <el-table-column
-            label="创建时间"
-            class-name="time"
-            min-width="110"
-            max-width="150"
-            show-overflow-tooltip
-          >
-            <template #default="scope">
-              <el-popover
-                effect="light"
-                trigger="hover"
-                placement="top"
-                width="auto"
-              >
-                <template #default>
-                  <div>创建时间: {{ scope.row.gmtCreate }}</div>
-                </template>
-                <template #reference>
-                  {{ scope.row.relativeCreate }}
-                </template>
-              </el-popover>
-            </template>
-          </el-table-column> -->
-          <!-- <el-table-column
-            label="修改时间"
-            class-name="time"
-            min-width="110"
-            max-width="160"
-            show-overflow-tooltip
-          >
-            <template #default="scope">
-              <el-popover
-                effect="light"
-                trigger="hover"
-                placement="top"
-                width="auto"
-              >
-                <template #default>
-                  <div>修改时间: {{ scope.row.gmtModify }}</div>
-                </template>
-                <template #reference>
-                  {{ scope.row.relativeModify }}
-                </template>
-              </el-popover>
-            </template>
-          </el-table-column> -->
           <el-table-column
             label="审核时间"
             class-name="time"
-            min-width="110"
-            max-width="160"
+            min-width="80"
             show-overflow-tooltip
           >
             <template #default="scope">
@@ -301,8 +251,7 @@ const getMemberProject = async () => {
           <el-table-column
             label="结项时间"
             class-name="time"
-            min-width="110"
-            max-width="160"
+            min-width="80"
             show-overflow-tooltip
           >
             <template #default="scope">
@@ -325,8 +274,7 @@ const getMemberProject = async () => {
             fixed="right"
             label="操作"
             class-name="operation"
-            min-width="100"
-            max-width="220"
+            min-width="90"
           >
             <template #default="scope">
               <el-button
@@ -363,31 +311,26 @@ const getMemberProject = async () => {
             prop="name"
             label="用户名"
             min-width="100"
-            max-width="300"
           />
           <el-table-column
             prop="phone"
             label="用手机号"
             min-width="150"
-            max-width="300"
           />
           <el-table-column
             prop="phone"
             label="QQ号"
             min-width="140"
-            max-width="250"
           />
           <el-table-column
             prop="phone"
             label="微信号"
             min-width="140"
-            max-width="250"
           />
           <el-table-column
             prop="institution"
             label="所属机构"
             min-width="100"
-            max-width="160"
           />
         </el-table>
       </div>

@@ -21,7 +21,11 @@ export const formatTime = (gmtDate) => {
                 // 一小时内
                 // 计算时间差（单位：分钟）
                 const diffInMinutes = Math.floor((t - now) / (60 * 1000));
-
+                if(diffInMinutes <= 0) {
+                    // 一分钟之内
+                    const diffInSeconds = Math.floor((t - now) / (1 * 1000));
+                    return `${diffInSeconds}秒后`;
+                }
                 return `${diffInMinutes}分钟后`;
             } else {
                 return `${diffInHours}小时后`;

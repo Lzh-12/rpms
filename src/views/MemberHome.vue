@@ -11,9 +11,9 @@ onMounted(() => {
   breadcrumbItems.value = [
     { name: "首页", path: "/member" },
     { name: "项目管理", path: "/member/project" },
-    { name: "参与项目", path: "/member/project/apply" }
+    { name: "参与项目", path: "/member/project/apply" },
   ];
-})
+});
 
 // 更新面包屑(一级菜单)
 // function updateBreadcrumb(newItemName, newItemPath) {
@@ -139,51 +139,6 @@ const gotoInfoPage = () => {
 <template>
   <div id="app">
     <el-container>
-      <el-header style="height: 80px">
-        <div
-          style="
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-          "
-        >
-          <div style="display: flex; align-items: center; color: #333; font-size: 32px;">
-            <img
-              src="@/assets/favicon.png"
-              alt=""
-              style="width: 50px; height: 50px; margin-right: 5px"
-            />
-            科研项目管理系统
-          </div>
-          <div style="color: #333; display: flex; align-items: center">
-            <el-popover
-              effect="light"
-              trigger="hover"
-              placement="top"
-              width="auto"
-            >
-              <template #default>
-                <div style="padding: 5px">
-                  <div style="margin-bottom: 5px; font-weight: bold;" @click="gotoInfoPage">
-                    账号信息<el-icon><ArrowRight /></el-icon>
-                  </div>
-                  <div style="margin-bottom: 5px">
-                    邮箱: {{ userInfo.email }}
-                  </div>
-                  <div style="margin-bottom: 5px">
-                    手机号: {{ userInfo.phone }}
-                  </div>
-                  <div>所属机构: {{ userInfo.institution }}</div>
-                </div>
-              </template>
-              <template #reference>
-                {{ userName }}
-              </template>
-            </el-popover>
-            <el-button @click="centerDialogVisible = true" style="margin-left: 10px;">退出</el-button>
-          </div>
-        </div>
-      </el-header>
       <el-container>
         <el-aside :width="asideWidth">
           <el-menu
@@ -232,9 +187,9 @@ const gotoInfoPage = () => {
                   index="3-1"
                   @click="
                     () =>
-                      updateBreadcrumbSec3('经费申请', 'member/funds/reimburse')
+                      updateBreadcrumbSec3('经费记录', 'member/funds/reimburse')
                   "
-                  >· 经费申请</el-menu-item
+                  >· 经费记录</el-menu-item
                 >
               </el-menu-item-group>
             </el-sub-menu>
@@ -248,9 +203,9 @@ const gotoInfoPage = () => {
                   index="4-1"
                   @click="
                     () =>
-                      updateBreadcrumbSec4('查看成果', 'member/achieve/result')
+                      updateBreadcrumbSec4('成果记录', 'member/achieve/result')
                   "
-                  >· 查看成果</el-menu-item
+                  >· 成果记录</el-menu-item
                 >
               </el-menu-item-group>
             </el-sub-menu>
@@ -273,6 +228,69 @@ const gotoInfoPage = () => {
           </el-menu>
         </el-aside>
         <el-container>
+          <el-header style="height: 80px">
+            <div
+              style="
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                background-color: #fff;
+              "
+            >
+              <div
+                style="
+                  display: flex;
+                  align-items: center;
+                  color: #333;
+                  font-size: 32px;
+                "
+              >
+                <el-button @click="toggleMenu" style="border: none">
+                  <el-icon><Expand /></el-icon>
+                </el-button>
+                <img
+                  src="@/assets/favicon.png"
+                  alt=""
+                  style="width: 50px; height: 50px; margin-right: 5px"
+                />
+                科研项目管理系统
+              </div>
+              <div style="color: #333; display: flex; align-items: center">
+                <el-popover
+                  effect="light"
+                  trigger="hover"
+                  placement="top"
+                  width="auto"
+                >
+                  <template #default>
+                    <div style="padding: 5px">
+                      <div
+                        style="margin-bottom: 5px; font-weight: bold"
+                        @click="gotoInfoPage"
+                      >
+                        账号信息<el-icon><ArrowRight /></el-icon>
+                      </div>
+                      <div style="margin-bottom: 5px">
+                        邮箱: {{ userInfo.email }}
+                      </div>
+                      <div style="margin-bottom: 5px">
+                        手机号: {{ userInfo.phone }}
+                      </div>
+                      <div>所属机构: {{ userInfo.institution }}</div>
+                    </div>
+                  </template>
+                  <template #reference>
+                    {{ userName }}
+                  </template>
+                </el-popover>
+                <el-button
+                  @click="centerDialogVisible = true"
+                  style="margin-left: 10px; border-radius: 10px; margin-right: 10px;"
+                  >退出</el-button
+                >
+              </div>
+            </div>
+          </el-header>
           <!-- 主窗体 -->
           <el-main>
             <!-- 面包屑导航 -->
@@ -286,9 +304,9 @@ const gotoInfoPage = () => {
                 margin-bottom: 10px;
               "
             >
-              <el-button @click="toggleMenu" style="border: none">
+              <!-- <el-button @click="toggleMenu" style="border: none">
                 <el-icon><Expand /></el-icon>
-              </el-button>
+              </el-button> -->
               <el-breadcrumb separator-class="el-icon-arrow-right">
                 <el-breadcrumb-item
                   v-for="(item, index) in breadcrumbItems"
@@ -344,10 +362,11 @@ body,
   font-weight: bold;
 
   margin: 0px;
+  padding: 0px;
 }
 
 .el-footer {
-  background-color: #b3c0d1;
+  background-color: #e5ebf1;
   color: #333;
   text-align: center;
   line-height: 60px;
@@ -413,6 +432,7 @@ body,
 .el-breadcrumb {
   background-color: #fcfdfd;
   height: 5vh;
+  margin-left: 10px;
   margin-bottom: 5px;
   display: flex;
   justify-content: flex-start;

@@ -19,17 +19,21 @@ const mode = ref("1");
 const gotoPage = (number) => {
   mode.value = number;
 };
-
 </script>
   
 <template>
   <div class="container">
-    <el-aside :style="{ width: isCollapse ? '64px' : '200px' }" style="background-color: #ffffff;">
+    <el-aside
+      :style="{ width: isCollapse ? '64px' : '200px' }"
+      style="background-color: #ffffff"
+    >
       <!-- <el-radio-group v-model="isCollapse" style="margin-bottom: 20px">
         <el-radio-button :value="false">展开</el-radio-button>
         <el-radio-button :value="true">隐藏</el-radio-button>
       </el-radio-group> -->
-      <el-button @click="isCollapse = !isCollapse"><el-icon><Operation /></el-icon></el-button>
+      <el-button @click="isCollapse = !isCollapse"
+        ><el-icon><Operation /></el-icon
+      ></el-button>
 
       <el-menu
         default-active="1"
@@ -47,12 +51,12 @@ const gotoPage = (number) => {
           <template #title>我的经费申请</template>
         </el-menu-item>
         <el-menu-item index="3" @click="gotoPage('3')">
-          <el-icon><DocumentChecked /></el-icon>
-          <template #title>已通过经费申请</template>
-        </el-menu-item>
-        <el-menu-item index="4" @click="gotoPage('4')">
           <el-icon><Folder /></el-icon>
           <template #title>已提交的经费申请</template>
+        </el-menu-item>
+        <el-menu-item index="4" @click="gotoPage('4')">
+          <el-icon><DocumentChecked /></el-icon>
+          <template #title>已通过经费申请</template>
         </el-menu-item>
       </el-menu>
     </el-aside>
@@ -71,12 +75,12 @@ const gotoPage = (number) => {
           <div v-else-if="mode === '2'">
             <FundsList></FundsList>
           </div>
-          <!-- 已经费申请列表-->
           <div v-else-if="mode === '3'">
-            <FundsApprovedList></FundsApprovedList>
-          </div>
-          <div v-else-if="mode === '4'">
             <FundsSubmit></FundsSubmit>
+          </div>
+          <!-- 已经费申请列表-->
+          <div v-else-if="mode === '4'">
+            <FundsApprovedList></FundsApprovedList>
           </div>
         </div>
       </el-main>

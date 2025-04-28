@@ -213,7 +213,6 @@ const rulesModify = {
         fixed
         label="项目状态"
         min-width="120"
-        max-width="200"
         show-overflow-tooltip
       >
         <template #default="scope">
@@ -238,21 +237,18 @@ const rulesModify = {
         prop="title"
         label="标题"
         min-width="130"
-        max-width="250"
         show-overflow-tooltip
       />
       <el-table-column
         prop="content"
         label="成果内容"
         min-width="120"
-        max-width="250"
         show-overflow-tooltip
       />
       <el-table-column
         prop="status"
         label="成果状态"
         min-width="120"
-        max-width="200"
       >
         <template #default="scope">
           <el-popover
@@ -275,13 +271,11 @@ const rulesModify = {
         prop="type"
         label="成果类型"
         min-width="120"
-        max-width="200"
         show-overflow-tooltip
       />
       <el-table-column
         label="提交时间"
         min-width="130"
-        max-width="240"
         show-overflow-tooltip
       >
         <template #default="scope">
@@ -303,7 +297,6 @@ const rulesModify = {
       <el-table-column
         label="修改时间"
         min-width="130"
-        max-width="240"
         show-overflow-tooltip
       >
         <template #default="scope">
@@ -325,7 +318,6 @@ const rulesModify = {
       <el-table-column
         label="审核时间"
         min-width="130"
-        max-width="240"
         show-overflow-tooltip
       >
         <template #default="scope">
@@ -348,14 +340,12 @@ const rulesModify = {
         prop="reviewContent"
         label="审核意见"
         min-width="130"
-        max-width="280"
         show-overflow-tooltip
       />
       <el-table-column
         fixed="right"
         label="操作"
         min-width="150"
-        max-width="180"
       >
         <template #default="scope">
           <el-button

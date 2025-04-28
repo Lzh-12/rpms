@@ -12,7 +12,6 @@ import {
   modifyTask,
 } from "@/api/task/index.js";
 import { projectMyCreate, projectMembers } from "@/api/project/index.js";
-// import { useRoute } from "vue-router";
 import { convertTimestamp, formatTime } from "@/utils/timeConverter.js";
 import {
   taskStatusContant,
@@ -23,11 +22,6 @@ import {
 import { ElMessage } from "element-plus";
 import { tableRowClassName } from "@/utils/tableUtils.js";
 
-// 用户id
-// const route = useRoute();
-// const temp = route.query.loginId;
-// const loginId = BigInt(temp);
-// console.log(loginId);
 
 const showColumn = ref(false);
 
@@ -39,10 +33,18 @@ const fetchOptions = async () => {
     .then((response) => {
       if (response.data.code === 0) {
         // 获取所有项目的id
-        options.value = response.data.data.map((item) => ({
-          ...item,
-          id: BigInt(item.id).toString(),
-        }));
+        // options.value = response.data.data.map((item) => ({
+        //   ...item,
+        //   id: BigInt(item.id).toString(),
+        // }));
+
+        // 筛选出status等于2的数据
+        options.value = response.data.data
+          .filter((item) => item.status === 2) // 筛选条件
+          .map((item) => ({
+            ...item,
+            id: BigInt(item.id).toString(),
+          }));
       } else {
         ElMessage.error(response.data.msg || "加载项目失败");
       }
@@ -152,7 +154,6 @@ const getTask = async () => {
               : formatTime(item.gmtFinish).toString(),
           relativeDeadline: formatTime(item.gmtDeadline).toString(),
         }));
-        // ElMessage.success(response.data.msg || "查询成功");
       } else {
         ElMessage.error(response.data.msg || "查询失败");
       }
@@ -193,7 +194,6 @@ const getTaskMy = async () => {
               : formatTime(item.gmtFinish).toString(),
           relativeDeadline: formatTime(item.gmtDeadline).toString(),
         }));
-        // ElMessage.success(response.data.msg || "查询成功");
       } else {
         ElMessage.error(response.data.msg || "查询失败");
       }
@@ -276,7 +276,6 @@ const getProjectAndMember = async () => {
           ...item,
           id: BigInt(item.id).toString(),
         }));
-        // ElMessage.success(response.data.msg || "加载成员成功");
       } else {
         ElMessage.error(response.data.msg || "加载成员失败");
       }
@@ -457,7 +456,7 @@ const taskFinish = async () => {
         style="
           width: 95%;
           margin-top: 20px;
-          margin-bottom: 30px;
+          margin-bottom: 10px;
           padding-bottom: 10px;
           border-bottom: 2px solid #f8f8f8f8;
         "
@@ -480,7 +479,6 @@ const taskFinish = async () => {
             fixed
             label="任务执行人"
             min-width="100"
-            max-width="180"
             show-overflow-tooltip
           >
             <template #default="scope">
@@ -530,14 +528,12 @@ const taskFinish = async () => {
             prop="content"
             label="任务内容"
             min-width="150"
-            max-width="220"
             show-overflow-tooltip
           />
           <el-table-column
             prop="status"
             label="任务状态"
             min-width="120"
-            max-width="180"
           >
             <template #default="scope">
               <el-popover
@@ -559,8 +555,7 @@ const taskFinish = async () => {
           <el-table-column
             v-if="showColumn"
             label="创建时间"
-            min-width="150"
-            max-width="230"
+            min-width="100"
             show-overflow-tooltip
           >
             <template #default="scope">
@@ -582,8 +577,7 @@ const taskFinish = async () => {
           <el-table-column
             v-if="showColumn"
             label="修改时间"
-            min-width="150"
-            max-width="230"
+            min-width="100"
             show-overflow-tooltip
           >
             <template #default="scope">
@@ -604,8 +598,7 @@ const taskFinish = async () => {
           </el-table-column>
           <el-table-column
             label="提交时间"
-            min-width="150"
-            max-width="230"
+            min-width="100"
             show-overflow-tooltip
           >
             <template #default="scope">
@@ -626,8 +619,7 @@ const taskFinish = async () => {
           </el-table-column>
           <el-table-column
             label="确认时间"
-            min-width="150"
-            max-width="230"
+            min-width="100"
             show-overflow-tooltip
           >
             <template #default="scope">
@@ -648,8 +640,7 @@ const taskFinish = async () => {
           </el-table-column>
           <el-table-column
             label="完成时间"
-            min-width="150"
-            max-width="230"
+            min-width="100"
             show-overflow-tooltip
           >
             <template #default="scope">
@@ -670,8 +661,7 @@ const taskFinish = async () => {
           </el-table-column>
           <el-table-column
             label="截止时间"
-            min-width="150"
-            max-width="230"
+            min-width="100"
             show-overflow-tooltip
           >
             <template #default="scope">
@@ -693,15 +683,13 @@ const taskFinish = async () => {
           <el-table-column
             prop="result"
             label="任务结果"
-            min-width="150"
-            max-width="280"
+            min-width="100"
             show-overflow-tooltip
           />
           <el-table-column
             fixed="right"
             label="操作"
             min-width="150"
-            max-width="280"
           >
             <template #default="scope">
               <el-button

@@ -1,9 +1,6 @@
 <script setup>
 import { ref, onMounted, watchEffect } from "vue";
-// import { Search } from "@element-plus/icons-vue";
 import { getMyTask, finishTask, ensureTask } from "@/api/task/index.js";
-// import { useRoute } from "vue-router";
-// import { projectMy } from "@/api/project/index.js";
 import { convertTimestamp, formatTime } from "@/utils/timeConverter.js";
 import {
   taskStatusContant,
@@ -149,14 +146,12 @@ const taskFinish = async () => {
             prop="content"
             label="任务内容"
             min-width="150"
-            max-widt="240"
             show-overflow-tooltip
           />
           <el-table-column
             prop="status"
             label="任务状态"
             min-width="120"
-            max-width="180"
             show-overflow-tooltip
           >
             <template #default="scope">
@@ -179,7 +174,6 @@ const taskFinish = async () => {
           <el-table-column
             label="提交时间"
             min-width="180"
-            max-width="230"
             show-overflow-tooltip
           >
             <template #default="scope">
@@ -201,7 +195,6 @@ const taskFinish = async () => {
           <el-table-column
             label="确认时间"
             min-width="180"
-            max-width="230"
             show-overflow-tooltip
           >
             <template #default="scope">
@@ -223,7 +216,6 @@ const taskFinish = async () => {
           <el-table-column
             label="完成时间"
             min-width="180"
-            max-width="230"
             show-overflow-tooltip
           >
             <template #default="scope">
@@ -245,7 +237,6 @@ const taskFinish = async () => {
           <el-table-column
             label="截止时间"
             min-width="180"
-            max-width="230"
             show-overflow-tooltip
           >
             <template #default="scope">
@@ -268,14 +259,12 @@ const taskFinish = async () => {
             prop="result"
             label="任务结果"
             min-width="150"
-            max-width="290"
             show-overflow-tooltip
           />
           <el-table-column
             fixed="right"
             label="操作"
             min-width="120"
-            max-width="220"
           >
             <template #default="scope">
               <el-button

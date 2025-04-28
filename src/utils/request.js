@@ -41,7 +41,7 @@ export const tokenObj = reactive({
 export const sendRequest = async(method, path, data = null, headers = {}) => {
   let rheaders = {...headers}
   rheaders['satoken'] = JSON.parse(sessionStorage.getItem("satoken"));
-  console.log("token",tokenObj.tokenName, tokenObj.tokenValue)
+  // console.log("token",tokenObj.tokenName, tokenObj.tokenValue)
   const config = {
       method: method,
       url: path,

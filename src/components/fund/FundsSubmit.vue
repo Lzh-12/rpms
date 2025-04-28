@@ -8,6 +8,8 @@ import {
 } from "@/constants/statusConstants.js";
 import { convertTimestamp, formatTime } from "@/utils/timeConverter.js";
 import { ElMessage } from "element-plus";
+import { tableRowClassName } from "@/utils/tableUtils.js";
+import { Search } from "@element-plus/icons-vue";
 
 // 表格数据
 const tableData = ref([]);
@@ -52,7 +54,7 @@ const form = ref({
 });
 // 项目已提交的经费列表的接口
 const searchAll = async () => {
-  if(!form.value.id){
+  if (!form.value.id) {
     ElMessage.warning("请先选择项目");
     return;
   }
@@ -76,7 +78,6 @@ const searchAll = async () => {
               ? "未审核"
               : formatTime(item.gmtReview).toString(),
         }));
-        // ElMessage.success(response.data.msg || "查询成功");
       } else {
         ElMessage.error(response.data.msg || "查询失败");
       }
@@ -133,17 +134,20 @@ onMounted(() => {
           />
         </el-select>
       </el-form-item>
-      <el-button type="primary" class="search" @click="searchAll"
+      <el-button type="primary" class="search" @click="searchAll" :icon="Search"
         >查询</el-button
       >
     </div>
     <div class="table">
-      <el-table :data="tableData" stripe>
+      <el-table
+        :data="tableData"
+        stripe
+        :header-row-class-name="tableRowClassName"
+      >
         <el-table-column
           fixed
           label="经费申请人"
           min-width="120"
-          max-width="200"
           show-overflow-tooltip
         >
           <template #default="scope">
@@ -158,19 +162,12 @@ onMounted(() => {
                 <div>邮箱: {{ scope.row.expenserEmail }}</div>
               </template>
               <template #reference>
-                <!-- <el-tag effect="plain" type="success"> -->
                 {{ scope.row.expenserName }}
-                <!-- </el-tag> -->
               </template>
             </el-popover>
           </template>
         </el-table-column>
-        <el-table-column
-          label="项目状态"
-          min-width="120"
-          max-width="200"
-          show-overflow-tooltip
-        >
+        <el-table-column label="项目状态" min-width="120" show-overflow-tooltip>
           <template #default="scope">
             <el-popover
               effect="light"
@@ -194,22 +191,15 @@ onMounted(() => {
           prop="content"
           label="经费内容"
           min-width="120"
-          max-width="250"
           show-overflow-tooltip
         />
         <el-table-column
           prop="figure"
           label="经费金额"
           min-width="100"
-          max-width="200"
           show-overflow-tooltip
         />
-        <el-table-column
-          prop="status"
-          label="经费状态"
-          min-width="120"
-          max-width="220"
-        >
+        <el-table-column prop="status" label="经费状态" min-width="120">
           <template #default="scope">
             <el-popover
               effect="light"
@@ -231,15 +221,9 @@ onMounted(() => {
           prop="type"
           label="经费类型"
           min-width="120"
-          max-width="220"
           show-overflow-tooltip
         />
-        <el-table-column
-          label="提交时间"
-          min-width="150"
-          max-width="230"
-          show-overflow-tooltip
-        >
+        <el-table-column label="提交时间" min-width="100" show-overflow-tooltip>
           <template #default="scope">
             <el-popover
               effect="light"
@@ -256,12 +240,7 @@ onMounted(() => {
             </el-popover>
           </template>
         </el-table-column>
-        <el-table-column
-          label="审核时间"
-          min-width="150"
-          max-width="230"
-          show-overflow-tooltip
-        >
+        <el-table-column label="审核时间" min-width="100" show-overflow-tooltip>
           <template #default="scope">
             <el-popover
               effect="light"
@@ -278,12 +257,7 @@ onMounted(() => {
             </el-popover>
           </template>
         </el-table-column>
-        <el-table-column
-          fixed="right"
-          label="操作"
-          min-width="120"
-          max-width="220"
-        >
+        <el-table-column fixed="right" label="操作" min-width="120">
           <template #default="scope">
             <el-button
               link
@@ -378,6 +352,12 @@ onMounted(() => {
 .search {
   margin-left: 40px;
   margin-bottom: 15px;
+}
+
+.el-table >>> .success-row th {
+  background: #edf6fb !important;
+  background: #525fad !important;
+  color: #fff !important;
 }
 
 /* @media screen and (min-width: 1500px) {

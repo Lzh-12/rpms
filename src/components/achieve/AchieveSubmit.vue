@@ -9,6 +9,8 @@ import {
 import { convertTimestamp, formatTime } from "@/utils/timeConverter.js";
 import { ElMessage } from "element-plus";
 import { tableRowClassName } from "@/utils/tableUtils.js";
+import { Search } from "@element-plus/icons-vue";
+
 
 // 成果列表
 const tableData = ref([]);
@@ -160,7 +162,6 @@ onMounted(() => {
           fixed
           label="成果提交人"
           min-width="100"
-          max-width="200"
           show-overflow-tooltip
         >
           <template #default="scope">
@@ -186,21 +187,18 @@ onMounted(() => {
           prop="title"
           label="成果标题"
           min-width="120"
-          max-width="300"
           show-overflow-tooltip
         />
         <el-table-column
           prop="content"
           label="成果内容"
           min-width="120"
-          max-width="300"
           show-overflow-tooltip
         />
         <el-table-column
           prop="status"
           label="成果状态"
           min-width="100"
-          max-width="200"
         >
           <template #default="scope">
             <el-popover
@@ -223,13 +221,11 @@ onMounted(() => {
           prop="type"
           label="成果类型"
           min-width="100"
-          max-width="200"
           show-overflow-tooltip
         />
         <el-table-column
           label="提交时间"
           min-width="100"
-          max-width="240"
           show-overflow-tooltip
         >
           <template #default="scope">
@@ -251,7 +247,6 @@ onMounted(() => {
         <el-table-column
           label="审核时间"
           min-width="100"
-          max-width="240"
           show-overflow-tooltip
         >
           <template #default="scope">
@@ -274,7 +269,6 @@ onMounted(() => {
           fixed="right"
           label="操作"
           min-width="100"
-          max-width="200"
         >
           <template #default="scope">
             <el-button

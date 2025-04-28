@@ -11,9 +11,9 @@ onMounted(() => {
   breadcrumbItems.value = [
     { name: "首页", path: "/admin" },
     { name: "项目管理", path: "/admin/project" },
-    { name: "审核项目", path: "/admin/project/apply" }
+    { name: "审核项目", path: "/admin/project/apply" },
   ];
-})
+});
 
 // 更新面包屑(一级菜单)
 // function updateBreadcrumb(newItemName, newItemPath) {
@@ -132,55 +132,10 @@ const gotoInfoPage = () => {
 <template>
   <div id="app">
     <el-container>
-      <el-header style="height: 80px">
-        <div
-          style="
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-          "
-        >
-          <div style="display: flex; align-items: center; color: #333; font-size: 32px;">
-            <img
-              src="@/assets/favicon.png"
-              alt=""
-              style="width: 50px; height: 50px; margin-right: 5px;"
-            />
-            科研项目管理系统
-          </div>
-          <div style="color: #333; display: flex; align-items: center">
-            <el-popover
-              effect="light"
-              trigger="hover"
-              placement="top"
-              width="auto"
-            >
-              <template #default>
-                <div style="padding: 5px">
-                  <div style="margin-bottom: 5px; font-weight: bold;" @click="gotoInfoPage">
-                    账号信息<el-icon><ArrowRight /></el-icon>
-                  </div>
-                  <div style="margin-bottom: 5px">
-                    邮箱: {{ userInfo.email }}
-                  </div>
-                  <div style="margin-bottom: 5px">
-                    手机号: {{ userInfo.phone }}
-                  </div>
-                  <div>所属机构: {{ userInfo.institution }}</div>
-                </div>
-              </template>
-              <template #reference>
-                {{ userName }}
-              </template>
-            </el-popover>
-            <el-button @click="centerDialogVisible = true"  style="margin-left: 10px;">退出</el-button>
-          </div>
-        </div>
-      </el-header>
       <el-container>
         <el-aside :width="asideWidth">
           <el-menu
-            :default-openeds="['1', '2']"
+            :default-openeds="['1']"
             default-active="1"
             class="el-menu-vertical-demo"
             :collapse="isCollapsed"
@@ -265,6 +220,70 @@ const gotoInfoPage = () => {
           </el-menu>
         </el-aside>
         <el-container>
+          <el-header style="height: 80px">
+            <div
+              style="
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                background-color: #ffffff;
+              "
+            >
+              <div
+                style="
+                  display: flex;
+                  align-items: center;
+                  color: #333;
+                  font-size: 32px;
+                "
+              >
+                <el-button @click="toggleMenu" style="border: none">
+                  <el-icon><Expand /></el-icon>
+                </el-button>
+                <img
+                  src="@/assets/favicon.png"
+                  alt=""
+                  style="width: 50px; height: 50px; margin-right: 5px"
+                />
+                科研项目管理系统
+              </div>
+              <div style="color: #333; display: flex; align-items: center">
+                <el-popover
+                  effect="light"
+                  trigger="hover"
+                  placement="top"
+                  width="auto"
+                >
+                  <template #default>
+                    <div style="padding: 5px">
+                      <div
+                        style="margin-bottom: 5px; font-weight: bold"
+                        @click="gotoInfoPage"
+                      >
+                        账号信息<el-icon><ArrowRight /></el-icon>
+                      </div>
+                      <div style="margin-bottom: 5px">
+                        邮箱: {{ userInfo.email }}
+                      </div>
+                      <div style="margin-bottom: 5px">
+                        手机号: {{ userInfo.phone }}
+                      </div>
+                      <div>所属机构: {{ userInfo.institution }}</div>
+                    </div>
+                  </template>
+                  <template #reference>
+                    {{ userName }}
+                  </template>
+                </el-popover>
+                <el-button
+                  @click="centerDialogVisible = true"
+                  style="margin-left: 10px; border-radius: 10px; margin-right: 10px;"
+                  >退出</el-button
+                >
+              </div>
+            </div>
+          </el-header>
+
           <!-- 主窗体 -->
           <el-main>
             <!-- 面包屑导航 -->
@@ -278,9 +297,6 @@ const gotoInfoPage = () => {
                 align-items: center;
               "
             >
-              <el-button @click="toggleMenu" style="border: none">
-                <el-icon><Expand /></el-icon>
-              </el-button>
               <el-breadcrumb separator-class="el-icon-arrow-right">
                 <el-breadcrumb-item
                   v-for="(item, index) in breadcrumbItems"
@@ -323,13 +339,30 @@ body,
   padding: 0px;
   height: 100vh;
 }
-.el-header {
+
+/* .el-header {
   background: linear-gradient(to bottom right, white, #4b69aa);
   color: #ffffff;
   text-align: left;
   line-height: 80px;
   /* font-size: 32px; */
+  /* font-weight: bold; */
+/* }  */
+
+.el-header {
+  /* background-color: #7856b6; */
+  background: linear-gradient(to bottom right, white, #8d8cd3);
+  /* background-color: #ffffff; */
+  /* border: 1px solid #e4e4e4; */
+  /* padding-left: 0px; */
+  width: 100%;
+  color: #ffffff;
+  text-align: left;
+  line-height: 80px;
+  /* font-size: 32px; */
   font-weight: bold;
+  padding: 0;
+  margin: 0;
 }
 
 .el-footer {
@@ -398,6 +431,7 @@ body,
 .el-breadcrumb {
   background-color: #fcfdfd;
   height: 5vh;
+  margin-left: 10px;
   margin-bottom: 5px;
   display: flex;
   justify-content: flex-start;

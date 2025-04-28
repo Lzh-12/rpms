@@ -107,7 +107,7 @@ const rules = {
   <div class="container">
     <el-form :model="form" :rules="rules" ref="formRef" label-width="auto" style="width: 60%">
       <el-form-item label="项目标题" prop="id">
-        <el-select v-model="form.id" placeholder="请选择项目">
+        <el-select v-model="form.id" placeholder="请选择项目" autocomplete="off">
           <el-option
             v-for="item in options"
             :key="item.id"

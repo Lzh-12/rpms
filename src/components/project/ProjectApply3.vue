@@ -74,10 +74,6 @@ const searchProjects = () => {
 const table = ref([]); // 表格数据
 // 获取项目统计信息
 const fetchProjects = async () => {
-  // pages.value.page = Number(currentPage.value) - 1;
-
-  // console.log(currentPage.value, pages.value.page);
-  // projectTally(pages.value)
   projectApproved()
     .then((response) => {
       if (response.data.code === 0) {
@@ -117,7 +113,6 @@ const fetchProjects = async () => {
 
 // 获取项目数据
 onMounted(() => {
-  // fetchPages();
   getUnapprovedProjects();
 });
 
@@ -192,7 +187,6 @@ const getMemberProject = async () => {
           ...item,
           id: BigInt(item.id),
         }));
-        // ElMessage.success(response.data.msg || "查看成功");
       } else {
         ElMessage.error(response.data.msg || "查看失败");
       }
@@ -213,7 +207,6 @@ const formReview = ref({
 const reviewTitle = ref("");
 const reviewDialog = (id, title) => {
   formReview.value.id = BigInt(id); // 项目id
-  // formReview.value.approved = true;
   reviewTitle.value = title;
   centerDialogVisibleReview.value = true;
 };
@@ -223,7 +216,6 @@ const reviewProject = async () => {
   projectReview(formReview.value)
     .then((response) => {
       if (response.data.code === 0) {
-        // currentPage.value = 1;
         fetchProjects();
         ElMessage.success(response.data.msg || "审核成功");
       } else {
@@ -303,12 +295,6 @@ const handleSelect = (key) => {
       <el-button type="primary" :icon="Search" @click="searchProjects"
         >查询</el-button
       >
-      <!-- <el-button type="success" :icon="Check" @click="fetchProjects"
-        >已立项</el-button
-      >
-      <el-button type="danger" :icon="Message" @click="getUnapprovedProjects"
-        >已驳回</el-button
-      > -->
     </div>
     <!-- 展示申报的项目 -->
     <div class="container-show">
@@ -326,14 +312,12 @@ const handleSelect = (key) => {
             prop="title"
             label="标题"
             min-width="120"
-            max-width="220"
             show-overflow-tooltip
           />
           <el-table-column
             prop="leaderName"
             label="负责人"
             min-width="100"
-            max-width="200"
             show-overflow-tooltip
           >
             <template #default="scope">
@@ -355,12 +339,7 @@ const handleSelect = (key) => {
               </el-popover>
             </template>
           </el-table-column>
-          <el-table-column
-            prop="status"
-            label="项目状态"
-            min-width="100"
-            max-width="160"
-          >
+          <el-table-column prop="status" label="项目状态" min-width="100">
             <template #default="scope">
               <el-popover
                 effect="light"
@@ -383,14 +362,12 @@ const handleSelect = (key) => {
             prop="budget"
             label="项目预算"
             min-width="100"
-            max-width="180"
             show-overflow-tooltip
           />
           <el-table-column
             v-if="!showMode"
             label="提交时间"
             min-width="110"
-            max-width="200"
             show-overflow-tooltip
           >
             <template #default="scope">
@@ -412,7 +389,6 @@ const handleSelect = (key) => {
           <el-table-column
             label="审核时间"
             min-width="110"
-            max-width="200"
             show-overflow-tooltip
           >
             <template #default="scope">
@@ -431,18 +407,10 @@ const handleSelect = (key) => {
               </el-popover>
             </template>
           </el-table-column>
-          <!-- <el-table-column
-            prop="reviewContent"
-            label="审核内容"
-            min-width="100"
-            max-width="220"
-            show-overflow-tooltip
-          /> -->
           <el-table-column
             prop="gmtConclude"
             label="结项时间"
             min-width="150"
-            max-width="250"
             v-if="showMode"
           >
             <template #default="scope">
@@ -452,7 +420,6 @@ const handleSelect = (key) => {
                 placement="top"
                 width="auto"
                 min-width="110"
-                max-width="200"
               >
                 <template #default>
                   <div>结项时间: {{ scope.row.gmtConclude }}</div>
@@ -468,7 +435,6 @@ const handleSelect = (key) => {
             prop="taskNum"
             label="任务数"
             min-width="100"
-            max-widt="200"
             show-overflow-tooltip
           />
           <el-table-column
@@ -476,7 +442,6 @@ const handleSelect = (key) => {
             prop="memberNum"
             label="成员数"
             min-width="100"
-            max-widt="200"
             show-overflow-tooltip
           />
           <el-table-column
@@ -484,7 +449,6 @@ const handleSelect = (key) => {
             prop="achieveNum"
             label="成果数"
             min-width="100"
-            max-widt="200"
             show-overflow-tooltip
           />
           <el-table-column
@@ -492,15 +456,9 @@ const handleSelect = (key) => {
             prop="fundNum"
             label="总花费"
             min-width="100"
-            max-widt="200"
             show-overflow-tooltip
           />
-          <el-table-column
-            fixed="right"
-            label="操作"
-            min-width="150"
-            max-width="200"
-          >
+          <el-table-column fixed="right" label="操作" min-width="150">
             <template #default="scope">
               <el-button
                 link
@@ -527,14 +485,6 @@ const handleSelect = (key) => {
             </template>
           </el-table-column>
         </el-table>
-        <!-- <el-pagination
-          background
-          layout="prev, pager, next"
-          :current-page="currentPage"
-          :total="total"
-          :page-size="pageSize"
-          @current-change="handleCurrentChange"
-        /> -->
       </div>
     </div>
 
@@ -543,49 +493,39 @@ const handleSelect = (key) => {
       v-model="centerDialogVisibleMember"
       title="项目成员"
       min-width="850"
-      max-width="1200"
       align-center
     >
       <div>
-        <el-table :data="memberData" stripe style="width: 100%">
+        <el-table
+          :data="memberData"
+          stripe
+          style="width: 100%"
+          :header-row-class-name="tableRowClassName"
+        >
           <el-table-column
             prop="email"
             label="用户邮箱"
             min-width="120"
-            max-width="240"
             show-overflow-tooltip
           />
           <el-table-column
             prop="name"
             label="用户名"
             min-width="100"
-            max-width="200"
             show-overflow-tooltip
           />
           <el-table-column
             prop="phone"
             label="用户手机号"
             min-width="100"
-            max-width="200"
             show-overflow-tooltip
           />
-          <el-table-column
-            prop="qq"
-            label="QQ"
-            min-width="100"
-            max-width="180"
-          />
-          <el-table-column
-            prop="qq"
-            label="微信号"
-            min-width="100"
-            max-width="180"
-          />
+          <el-table-column prop="qq" label="QQ" min-width="100" />
+          <el-table-column prop="qq" label="微信号" min-width="100" />
           <el-table-column
             prop="institution"
             label="所属机构"
             min-width="100"
-            max-width="180"
           />
         </el-table>
       </div>
@@ -643,7 +583,6 @@ const handleSelect = (key) => {
 .container-find {
   display: flex;
   flex-direction: row;
-  /* justify-content: center; */
   align-items: center;
   height: 90px;
   margin-bottom: 10px;

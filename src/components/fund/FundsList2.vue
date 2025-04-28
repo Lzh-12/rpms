@@ -231,7 +231,6 @@ const fundModify = async () => {
         fixed
         label="项目状态"
         min-width="120"
-        max-width="200"
         show-overflow-tooltip
       >
         <template #default="scope">
@@ -256,21 +255,18 @@ const fundModify = async () => {
         prop="content"
         label="经费内容"
         min-width="120"
-        max-width="250"
         show-overflow-tooltip
       />
       <el-table-column
         prop="figure"
         label="经费金额"
         min-width="100"
-        max-width="200"
         show-overflow-tooltip
       />
       <el-table-column
         prop="status"
         label="经费状态"
         min-width="120"
-        max-widt="200"
       >
         <template #default="scope">
           <el-popover
@@ -293,13 +289,11 @@ const fundModify = async () => {
         prop="type"
         label="经费类型"
         min-width="120"
-        max-width="200"
         show-overflow-tooltip
       />
       <el-table-column
         label="创建时间"
-        min-width="140"
-        max-width="230"
+        min-width="100"
         show-overflow-tooltip
       >
         <template #default="scope">
@@ -320,8 +314,7 @@ const fundModify = async () => {
       </el-table-column>
       <el-table-column
         label="修改时间"
-        min-width="140"
-        max-width="230"
+        min-width="100"
         show-overflow-tooltip
       >
         <template #default="scope">
@@ -343,8 +336,7 @@ const fundModify = async () => {
       <el-table-column
         prop="gmtReview"
         label="审核时间"
-        min-width="140"
-        max-width="230"
+        min-width="100"
         show-overflow-tooltip
       >
         <template #default="scope">
@@ -367,7 +359,6 @@ const fundModify = async () => {
         fixed="right"
         label="操作"
         min-width="150"
-        max-width="300"
       >
         <template #default="scope">
           <el-button
@@ -536,6 +527,12 @@ const fundModify = async () => {
 .el-table {
   padding: 5px;
   padding-bottom: 20px;
+}
+
+.el-table >>> .success-row th {
+  background: #edf6fb !important;
+  background: #525fad !important;
+  color: #fff !important;
 }
 
 @media screen and (min-width: 1500px) {

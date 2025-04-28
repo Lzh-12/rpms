@@ -95,54 +95,50 @@ const optionsIsGrant = ref([
         border
         :header-row-class-name="tableRowClassName"
       >
-        <!-- <el-table-column fixed prop="id" label="用户编号" min-width="230" max-width="350" show-overflow-tooltip/> -->
         <el-table-column
           prop="email"
           label="用户邮箱"
           min-width="230"
-          max-width="500"
+          sortable
           show-overflow-tooltip
         />
         <el-table-column
           prop="name"
           label="用户名"
           min-width="200"
-          max-width="450"
           show-overflow-tooltip
         />
         <el-table-column
           prop="phone"
           label="用户手机号"
           min-width="200"
-          max-width="500"
+          sortable
           show-overflow-tooltip
         />
         <el-table-column
           prop="qq"
           label="QQ号"
           min-width="150"
-          max-width="500"
+          sortable
           show-overflow-tooltip
         />
         <el-table-column
           prop="wechat"
           label="微信号"
           min-width="150"
-          max-width="500"
+          sortable
           show-overflow-tooltip
         />
         <el-table-column
           prop="institution"
           label="所属机构"
           min-width="150"
-          max-width="50"
           show-overflow-tooltip
         />
         <el-table-column
           fixed="right"
           label="操作"
           min-width="100"
-          max-width="300"
         >
           <template #default="scope">
             <el-button link type="primary" @click="edit(scope.row.id)">

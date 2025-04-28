@@ -73,7 +73,6 @@ const searchApproved = async () => {
               ? "未审核"
               : formatTime(item.gmtReview).toString(),
         }));
-        // ElMessage.success(response.data.msg || "查询成功");
       } else {
         ElMessage.error(response.data.msg || "查询失败");
       }
@@ -118,7 +117,6 @@ const searchApproved = async () => {
           fixed
           label="成果提交人"
           min-width="80"
-          max-width="200"
           show-overflow-tooltip
         >
           <template #default="scope">
@@ -144,27 +142,23 @@ const searchApproved = async () => {
           prop="title"
           label="成果标题"
           min-width="120"
-          max-width="240"
           show-overflow-tooltip
         />
         <el-table-column
           prop="content"
           label="成果内容"
           min-width="120"
-          max-width="250"
           show-overflow-tooltip
         />
         <el-table-column
           prop="type"
           label="成果类型"
           min-width="100"
-          max-width="200"
           show-overflow-tooltip
         />
         <el-table-column
           label="审核时间"
           min-width="110"
-          max-width="240"
           show-overflow-tooltip
         >
           <template #default="scope">
@@ -188,7 +182,6 @@ const searchApproved = async () => {
           prop="reviewContent"
           label="审核意见"
           min-width="130"
-          max-width="280"
           show-overflow-tooltip
         />
       </el-table>

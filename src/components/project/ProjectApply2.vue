@@ -48,7 +48,7 @@ const searchProjects = () => {
 
 const table = ref([]); // 表格数据
 
-// 获取项目数据
+// 获取我参与的项目数据
 const fetchProjects = async () => {
   projectMy()
     .then((response) => {
@@ -102,7 +102,7 @@ onMounted(() => {
   // tableRowClassName({ row: {}, rowIndex: 0 });
 });
 
-const showMode = ref(false);
+const showMode = ref(true);
 // ---------------------- 获取创建的项目列表
 const createProjects = async () => {
   projectMyCreate()
@@ -271,7 +271,6 @@ const formModify = ref({
   area: null,
 });
 const updateDialog = (id) => {
-  // console.log(typeof id);
   formModify.value.id = id; // 项目id
   const index = ref({
     id: null,
@@ -306,7 +305,8 @@ const updateProject = async () => {
   projectModify(formModify.value)
     .then((response) => {
       if (response.data.code === 0) {
-        fetchProjects();
+        // fetchProjects();
+        handleSelect("2");
         ElMessage.success(response.data.msg || "修改成功");
       } else {
         ElMessage.error(response.data.msg || "修改失败");
@@ -346,7 +346,8 @@ const deleteProject = async () => {
   projectDelete(formDelete.value)
     .then((response) => {
       if (response.data.code === 0) {
-        createProjects();
+        // createProjects();
+        handleSelect("2");
         ElMessage.success(response.data.msg || "删除成功");
       } else {
         ElMessage.error(response.data.msg || "删除失败");
@@ -369,7 +370,7 @@ const formMember = ref({
 });
 const memberStatus = ref("");
 const getMemberDialog = (id, status) => {
-  formMember.value.id = id; // 项目id
+  formMember.value.id = id; // 项目id   
   formManageMember.value.id = id; // 邀请成员
   formDeleteMember.value.id = id; // 删除成员
   memberStatus.value = showMemberButton(status);
@@ -393,7 +394,6 @@ const getMemberProject = async () => {
           ...item,
           id: BigInt(item.id),
         }));
-        // ElMessage.success(response.data.msg || "查看成功");
       } else {
         ElMessage.error(response.data.msg || "查看失败");
       }
@@ -452,6 +452,12 @@ const rules = {
 const innerVisible = ref(false);
 const inviteMember = async () => {
   formManageMember.value.is = true; // 表示邀请成员
+
+  formManageMember.value.email = formEmail.value.email;
+  
+
+  console.log(formManageMember.value);
+
   projectManageMember(formManageMember.value)
     .then((response) => {
       if (response.data.code === 0) {
@@ -489,7 +495,8 @@ const submitProject = async () => {
   projectSubmit(formSubmit.value)
     .then((response) => {
       if (response.data.code === 0) {
-        fetchProjects();
+        // fetchProjects();
+        handleSelect("2");
         ElMessage.success(response.data.msg || "提交成功");
       } else {
         ElMessage.error(response.data.msg || "提交失败");
@@ -527,7 +534,8 @@ const conclusionProject = async () => {
     .then((response) => {
       if (response.data.code === 0) {
         ElMessage.success(response.data.msg || "提交成功");
-        fetchProjects();
+        // fetchProjects();
+        handleSelect("2");
       } else {
         ElMessage.error(response.data.msg || "提交失败");
       }
@@ -554,9 +562,9 @@ const showDelete = (id) => {
 const activeIndex = ref("1");
 const handleSelect = (key) => {
   if (key === "1") {
-    createProjects();
-  } else if (key === "2") {
     fetchProjects();
+  } else if (key === "2") {
+    createProjects();
   }
   activeIndex.value = key;
 };
@@ -571,12 +579,14 @@ const handleSelect = (key) => {
       mode="horizontal"
       @select="handleSelect"
     >
-      <el-menu-item index="1">我的创建</el-menu-item>
-      <el-menu-item index="2">我的参与</el-menu-item>
+      <el-menu-item index="1">我的参与</el-menu-item>
+      <el-menu-item index="2">我的创建</el-menu-item>
     </el-menu>
     <!-- 查询申请的项目 -->
     <div class="container-find">
-      <label for="" class="container-find-label" style="margin-left: 20px;">项目</label>
+      <label for="" class="container-find-label" style="margin-left: 20px"
+        >项目</label
+      >
       <el-select
         v-model="projectTitle"
         placeholder="请选择项目"
@@ -619,15 +629,13 @@ const handleSelect = (key) => {
             prop="title"
             label="标题"
             min-width="100"
-            max-width="200"
             show-overflow-tooltip
           />
           <el-table-column
-            v-if="showMode"
+            v-if="!showMode"
             prop="leaderName"
             label="负责人"
-            min-width="100"
-            max-width="160"
+            min-width="70"
             show-overflow-tooltip
           >
             <template #default="scope">
@@ -650,11 +658,10 @@ const handleSelect = (key) => {
             </template>
           </el-table-column>
           <el-table-column
-            v-if="!showMode.value"
+            v-if="showMode"
             prop="reviewerName"
             label="审核人"
-            min-width="100"
-            max-width="160"
+            min-width="80"
             show-overflow-tooltip
           >
             <template #default="scope">
@@ -676,12 +683,7 @@ const handleSelect = (key) => {
               </el-popover>
             </template>
           </el-table-column>
-          <el-table-column
-            prop="status"
-            label="状态"
-            min-width="90"
-            max-width="180"
-          >
+          <el-table-column prop="status" label="状态" min-width="80">
             <template #default="scope">
               <el-popover
                 effect="light"
@@ -702,8 +704,7 @@ const handleSelect = (key) => {
           <el-table-column
             v-if="showMode"
             label="创建时间"
-            min-width="110"
-            max-width="170"
+            min-width="90"
             show-overflow-tooltip
           >
             <template #default="scope">
@@ -725,8 +726,7 @@ const handleSelect = (key) => {
           <el-table-column
             v-if="showMode"
             label="修改时间"
-            min-width="110"
-            max-width="160"
+            min-width="80"
             show-overflow-tooltip
           >
             <template #default="scope">
@@ -747,8 +747,7 @@ const handleSelect = (key) => {
           </el-table-column>
           <el-table-column
             label="审核时间"
-            min-width="110"
-            max-width="170"
+            min-width="80"
             show-overflow-tooltip
           >
             <template #default="scope">
@@ -778,8 +777,7 @@ const handleSelect = (key) => {
                 trigger="hover"
                 placement="top"
                 width="auto"
-                min-width="110"
-                max-width="160"
+                min-width="80"
               >
                 <template #default>
                   <div>结项时间: {{ scope.row.gmtConclude }}</div>
@@ -790,12 +788,7 @@ const handleSelect = (key) => {
               </el-popover>
             </template>
           </el-table-column>
-          <el-table-column
-            fixed="right"
-            label="操作"
-            min-width="160"
-            max-width="280"
-          >
+          <el-table-column fixed="right" label="操作" min-width="120">
             <template #default="scope">
               <el-button
                 link

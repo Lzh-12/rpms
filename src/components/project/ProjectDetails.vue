@@ -4,6 +4,7 @@ import { useRoute } from "vue-router";
 import { getProjectDetails } from "@/api/project/index.js";
 import { convertTimestamp } from '@/utils/timeConverter.js';
 import { ElMessage } from "element-plus";
+import { projectStatusMap } from "@/constants/statusConstants";
 
 
 const route = useRoute();
@@ -23,6 +24,7 @@ const fetchProjectDetails = async () => {
       if (response.data.code === 0) {
         console.log(response.data.data)
         projectDetails.value = response.data.data;
+        projectDetails.value.status = projectStatusMap[projectDetails.value.status],
         projectDetails.value.gmtCreate = convertTimestamp(projectDetails.value.gmtCreate),
         projectDetails.value.gmtModify = convertTimestamp(projectDetails.value.gmtModify),
         projectDetails.value.gmtReview = projectDetails.value.gmtReview === 0 ? "未审核" : convertTimestamp(projectDetails.value.gmtReview),
@@ -233,9 +235,8 @@ onMounted(() => {
 .el-text {
   color: black;
 }
+
 .container-card-content-label {
-  /* color: #150aad; */
-  /* border: 2px solid red; */
   margin-right: 5%;
   width: 25%;
 }
